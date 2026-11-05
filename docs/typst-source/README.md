@@ -1,11 +1,11 @@
-# PDF source
+# Project plan source
 
-The project plan is authored in `main.typ` and uses the colocated `report-theme.typ`. It imports the pinned Typst Universe package `@preview/glossarium:0.5.10`.
+The five-day Phase 1 project plan is authored in `main.typ` and uses the colocated `report-theme.typ`. The source has no external Typst package dependency.
 
-With Typst installed and package access available, build from this directory:
+Build from this directory with Typst installed:
 
 ```sh
-typst compile main.typ project-plan.pdf
+typst compile main.typ ../project-plan.pdf
 ```
 
-The manifest and build-plan JSON record the routing decision and package pin used for this artifact. The rendered deliverable is [`../project-plan.pdf`](../project-plan.pdf).
+The `.typst-content-manifest.json` and `.typst-build-plan.json` record the existing-project routing and local-theme preflight. The rendered plan is [`../project-plan.pdf`](../project-plan.pdf). The plan is deliberately limited to one main ESP32, one auxiliary ESP32-CAM, manual phone control over BLE, and validated sensor telemetry.

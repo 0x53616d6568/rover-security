@@ -1,74 +1,51 @@
-# ENISOLAR Rover — One-Week University Demo
+# ENISOLAR Rover — Phase 1 Plan (v1.2)
 
-A small, build-from-zero rover demo plan for a three-person team. The aim is a **safe, working demonstration**, not a production rover or a claim of complete security. Use parts already available or standard development hardware. No custom PCB, cloud backend, machine-learning detector, or advanced autonomous navigation in this one-week scope.
+This repository is the planning baseline for a supervised, one-week rover demonstration. It is **not** a completed firmware, phone app, or dashboard implementation. The team must record only behavior that has been built and tested on the actual hardware.
 
-## Demo goal
+## Confirmed Phase 1 scope
 
-By the end of the week, show a rover that can move at low speed from a simple dashboard, stop on command, display basic status, and demonstrate a basic navigation behavior only if the required hardware works. If hardware is unavailable, use a simulator or mocked telemetry and clearly label it. Keep the rover local/offline; do not expose it to the public internet.
+- A normal all-terrain rover, manually guided by an operator from a phone over **local BLE**.
+- **One main ESP32** owns motor control, safety state, sensor acquisition, and telemetry aggregation.
+- One **ESP32-CAM** is an auxiliary image-capture device; it has no authority over the motors.
+- Preserve the sensors actually fitted and validated: GPS, IMU, magnetometer, wheel encoders, DHT22, and electrical measurements only when instrumented. The LiDAR mentioned in the historical blueprint is optional and its presence/interface must be confirmed.
+- A phone dashboard shows BLE connection, operating state, faults, and sensor values with units, validity, and age. Missing or stale readings are explicitly marked.
+- No Wi-Fi/cloud control, timed route, waypoint, AUTO mode, obstacle avoidance, or intelligent security action in Phase 1.
 
-## Team to-do lists
+The second ESP32, intelligent navigation/perception, and the future embedded-security project are **later extensions**, after the Phase 1 platform, power system, telemetry, and stop behavior are reviewed.
 
-### Person 1 — Wiring and core firmware
+## Five-day demonstration plan
 
-- [ ] **Day 1:** Inventory the chassis, controller, motor driver, battery, and cables. Agree on available parts; draw and review the pin/power map before powering anything.
-- [ ] **Day 2:** Wire the controller, motor driver, motors, and a physical stop/disable path. Test power and outputs with wheels lifted and motors disabled first.
-- [ ] **Day 3:** Implement a minimal firmware loop: boot, motor commands, speed limits, status, and stop-on-timeout.
-- [ ] **Day 4:** Integrate with Person 2’s control interface and Person 3’s dashboard. Fix wiring/firmware bugs; keep a known-good build.
-- [ ] **Day 5:** Run the demo checklist, record the final pin map and firmware build steps, and prepare a safe reset/recovery procedure.
+| Day | Milestone | Exit evidence |
+|---|---|---|
+| 1 | Inventory hardware, confirm parts and scope, review pin/power map and test area | Actual inventory and reviewed wiring/risk list; no guessed ratings or pins |
+| 2 | Safe bring-up: logic first, motors inactive at boot/reset, verify physical stop | Logged electrical checks and independent stop test before powered movement |
+| 3 | BLE manual commands and initial phone dashboard | Authorized, bounded commands; connection/state/fault display; missing sensors marked unavailable |
+| 4 | Integration and negative tests | Measured stop-on-timeout; tests for disconnect/reconnect, invalid frames, sensor faults, reboot and camera/SD failure |
+| 5 | Freeze and rehearse | Three repeatable, low-speed manual runs, final wiring/build notes and disclosed limitations |
 
-**Done when:** wiring is checked, the rover responds to low-speed commands, and stop works when commanded or when control messages stop.
+This is a proposed schedule, not a delivery guarantee. If parts, safety checks, or real measurements are unavailable, use a simulator or mocked values clearly labelled as simulated; do not represent them as hardware telemetry.
 
-### Person 2 — Connectivity and navigation
+## Team responsibilities
 
-- [ ] **Day 1:** Choose one simple local connection method supported by the board (prefer local Wi-Fi access point/web requests or BLE; do not build both unless one already works).
-- [ ] **Day 2:** Define a tiny command/status format with Person 1: forward, reverse, left, right, stop, and basic status. Add bounds and reject unknown commands.
-- [ ] **Day 3:** Implement manual control and one navigation demo: a short timed/waypoint path only if sensors and safe behavior are ready; otherwise use a simulated path/status display.
-- [ ] **Day 4:** Integrate and test disconnect, reconnect, invalid command, and stop behavior with the real rover or simulator.
-- [ ] **Day 5:** Document how to connect and demonstrate the navigation feature, including limits and fallback behavior.
+- **Person 1 — electronics/core firmware:** actual inventory, power and pin map, motor outputs OFF at boot/reset, bounded commands, physical stop and timeout behavior.
+- **Person 2 — BLE/phone control:** BLE service, pairing/authorization, joystick, command sequence and state acknowledgement, loss/reconnect tests.
+- **Person 3 — dashboard/telemetry/acceptance:** connection/mode/faults, measurement validity and age, integrated test log, camera/SD only if stable.
 
-**Done when:** local commands work reliably, a disconnect leads to stop, and the navigation demo is repeatable and appropriately limited.
+Integrate daily on a known-good build. First motor tests are with the wheels lifted; ground tests are low-speed in a clear controlled area with a spotter and physical cut-off accessible. A phone STOP is not a substitute for a tested hardware cut-off.
 
-### Person 3 — Dashboard, security, and demo integration
+## Documents and deliverables
 
-- [ ] **Day 1:** Agree the demo requirements and keep a visible task board. Choose a simple local dashboard that shows connection, mode, status, and stop control.
-- [ ] **Day 2:** Build the dashboard with clear controls and a prominent stop button. Do not add login/cloud unless already available and required.
-- [ ] **Day 3:** Add basic security checks: local-only network, no secrets committed, input validation, no default credentials displayed, and no control when disconnected.
-- [ ] **Day 4:** Lead the integration test with Persons 1 and 2. Test stop, disconnect, invalid command, reboot, and the complete demo flow.
-- [ ] **Day 5:** Prepare the short demo script, screenshots/video if permitted, limitations, and final README/docs review.
+- [Revised ENISOLAR requirements and risk analysis v1.2](docs/Cahier_des_charges_Rover_ENISOLAR_v1.2.pdf)
+- [Five-day project plan PDF](docs/project-plan.pdf)
+- [Editable Typst source for the project plan](docs/typst-source/main.typ)
+- [Rover blueprint and confirmed-vs-unconfirmed hardware](docs/Rover%20blueprint.md)
+- [Wiring schematic / bring-up checklist](docs/wiring-schematic.md)
+- [Firmware requirements](docs/firmware.md)
+- [BLE connectivity and protocol](docs/connectivity.md)
+- [Dashboard and telemetry contract](docs/dashboard.md)
+- [Navigation scope and future gate](docs/navigation.md)
+- [Security and test checklist](docs/security.md)
 
-**Done when:** dashboard reflects rover status, sends only allowed commands, and stop/disconnect behavior is demonstrated.
+## Safety and status
 
-## Shared daily rhythm
-
-At the start of each day, agree on one small deliverable per person and any hardware blockers. Integrate at least once a day. Keep one known-good version. Do not leave first hardware integration to the last day. If the hardware path is blocked, switch early to simulation and document that choice.
-
-## One-week plan
-
-| Day | Shared milestone |
-|---|---|
-| 1 | Confirm available parts, scope, safe wiring, command format, and demo plan |
-| 2 | Bring up hardware and local connectivity; no autonomous motion yet |
-| 3 | Complete core drive commands, basic UI, and a navigation/simulation path |
-| 4 | Integrate, test stop/disconnect/invalid input, fix blockers |
-| 5 | Freeze features, run demo rehearsal, document setup and limitations |
-
-## Scope and safety limits
-
-- Demonstrate only on a clear, controlled area with wheels lifted during initial motor tests, low speed, a spotter, and an accessible physical power/stop control.
-- Do not drive near people, roads, stairs, or fragile equipment. Stop if the rover behaves unexpectedly.
-- Prefer a physical motor-disable/E-stop where the available hardware supports it. Firmware stop is not a substitute for a physical stop.
-- Use a local connection only. Do not publish the rover or its controls to the internet.
-- Treat the supplied security slides’ metrics, security claims, and sample timeout values as unverified. This class demo does not certify the rover as secure.
-
-## Docs
-
-- [Rover blueprint: signal map and power wiring](docs/blueprint.md)
-- [Wiring schematic](docs/wiring-schematic.md)
-- [Firmware](docs/firmware.md)
-- [Navigation](docs/navigation.md)
-- [Connectivity](docs/connectivity.md)
-- [Dashboard](docs/dashboard.md)
-- [Security](docs/security.md)
-- [One-week PDF plan](docs/project-plan.pdf)
-
-Keep each doc short and update it as the team makes actual implementation choices. Do not leave example values looking like verified hardware facts.
+Use only in a controlled demonstration area. Do not expose rover controls to the public internet. Verify component ratings and the physical stop before motor tests. Stop testing on unexpected movement, overheating, or a failed stop path. This plan does not claim production security, safety certification, or completed implementation.

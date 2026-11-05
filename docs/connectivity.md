@@ -1,23 +1,29 @@
-# Connectivity
+# Connectivity — Phase 1 BLE
 
-## One-week choice
+## Decision
 
-Choose **one** local link that the available hardware supports. A simple ESP32 access point with a local web dashboard is a good default if the team already knows the stack. BLE is an alternative if a working app/client is already available. Do not add cloud/MQTT unless the class requirement demands it and the team can test it safely.
+The Phase 1 control link is **phone to main ESP32 over local Bluetooth Low Energy (BLE)**. Do not implement Wi-Fi, MQTT, cloud control, or a second control path for this demonstration. The phone is the only source of motion commands; the ESP32-CAM is not a controller.
 
-## Minimal message contract
+## Minimal contract
 
-Commands: `STOP`, `FORWARD`, `REVERSE`, `LEFT`, `RIGHT`. Optional numeric speed must be clamped to the agreed demo limit. Status: `connected`, `mode`, `last_command`, and `fault`; include sensor/battery values only if available and labeled accurately.
+- **Phone → rover:** protocol version, sequence number, arm/disarm state, bounded longitudinal and turn axes, and explicit STOP.
+- **Rover → phone:** connection and operating state, last accepted sequence/command, acknowledgement or rejection, fault code, plus sensor readings with units, validity, and age.
+- Unknown, malformed, stale, out-of-range, or unauthorized commands are rejected and shown as a fault/status—not silently accepted.
+- A STOP request is prioritized, but it is not a replacement for the independent physical motor cut-off.
+- Camera capture/status may be relayed through the main controller. Camera traffic must never delay or activate motor control.
 
-Use a short timeout measured on the actual system. On disconnect or stale commands, firmware disables the drive output and shows a disconnected/stopped state. The precise timeout is a demo setting to test, not a security guarantee.
+The exact GATT service/characteristic UUIDs, frame encoding, pairing mode, sequence handling, and any CRC are to be agreed and documented before implementation. Do not claim cryptographic authentication unless it is implemented and tested.
 
-## Tasks
+## Loss-of-control behavior
 
-- [ ] Day 1: choose Wi-Fi local AP or BLE and record board/client requirements.
-- [ ] Day 2: agree command and status fields with the firmware owner.
-- [ ] Day 3: connect dashboard and rover using a local test.
-- [ ] Day 4: test disconnect, reconnect, malformed command, and duplicate command.
-- [ ] Day 5: document connect steps and show the link working in the demo.
+Use a dead-man/command timeout. The requirements document sets a nominal target of 500 ms after command expiry; measure actual behavior on the prototype and record the result. On disconnect, stale command, controller reset, or invalid frame: set motion to zero, disable drive output as designed, show STOPPED/FAULT, and require explicit re-arm after recovery. Do not resume movement automatically after reconnect.
 
-## Basic safeguards
+## Five-day checkpoints
 
-Keep the rover on an isolated/local network. Do not port-forward it or use public broker credentials. Allow only the small demo command set, reject malformed input, and do not include passwords or keys in screenshots, commits, or serial output. This is a classroom prototype, not a hardened remote-control service.
+- [ ] **Day 1:** confirm that the phone and exact ESP32 board support the proposed BLE path; freeze the V1 command/state fields.
+- [ ] **Day 2:** verify BLE connection without enabling motor power; confirm unarmed startup.
+- [ ] **Day 3:** implement bounded joystick commands, STOP priority, acknowledgements and dashboard status.
+- [ ] **Day 4:** test disconnect, reconnect, stale sequence, malformed frame, unauthorized client and timeout on hardware.
+- [ ] **Day 5:** freeze the tested protocol/build and document how to pair, recover, and stop.
+
+Keep the demo local. Do not port-forward, expose a broker, commit passwords/tokens/private keys, or put credentials into logs or screenshots. BLE pairing alone is not a complete security guarantee.

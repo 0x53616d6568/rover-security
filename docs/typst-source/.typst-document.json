@@ -1,9 +1,9 @@
 {
   "entry": "main.typ",
   "metadata": {
-    "author": "University Project Team",
-    "subtitle": "A simple three-person university project",
-    "title": "ENISOLAR Rover — One-Week Demo Plan"
+    "author": "Équipe projet ENISOLAR",
+    "subtitle": "Conduite BLE manuelle, télémétrie et arrêt sûr",
+    "title": "ENISOLAR Rover — Plan de démonstration sur cinq jours v1.2"
   },
   "mode": "report",
   "theme": "report-theme.typ"

@@ -1,25 +1,18 @@
-# Navigation
+# Navigation scope
 
-## Demo scope
+## Phase 1: operator-guided only
 
-Keep navigation intentionally simple. First deliver manual low-speed control. Add one repeatable navigation behavior only if the required sensors and safety checks are available. In one week, a short timed route or a simple waypoint sequence is more realistic than robust autonomous navigation.
+Phase 1 has **no autonomous navigation**. The rover is guided manually from the phone over BLE using bounded forward/reverse and turn commands. GPS, IMU, compass, camera, and optional LiDAR data may be displayed as telemetry if fitted and validated, but they do not create a route or trigger movement.
 
-## Demo option A — Timed path
+Out of scope: timed paths, waypoint routes, patrols, AUTO mode, return-to-base, object/person classification, obstacle avoidance, and safety decisions made autonomously. The five-day demo must not add a timed/waypoint route as a fallback feature.
 
-Drive forward for a short measured interval, stop, turn for a short interval, then stop. Test with wheels lifted first and then in a clear, bounded area at low speed. Timed motion is open-loop and will drift with battery level, surface, and motor differences; present it as a demonstration, not accurate navigation.
+## Later intelligent extension gate
 
-## Demo option B — Simple waypoint sequence
+After Phase 1 acceptance, a separately reviewed extension may consider the second ESP32, sensor interfaces, navigation/perception, and the embedded-security project. Before implementation, define:
 
-Use only if GPS or equivalent localization is working and the team can define a safe boundary. Limit the route to a small area, low speed, a short number of waypoints, and a manual stop. If the position is unavailable or implausible, stop rather than continue blindly.
+- which controller owns motor authority and what happens if either ESP32 or their link fails;
+- confirmed sensor models, field of view/range, update rates, calibration, and limits;
+- bounded test area, speed, operator override, physical stop, and measurable fail-safe behavior;
+- data handling, threat model, privacy, and claims that can be validated.
 
-## Tasks
-
-- [ ] Choose and document the demo option on Day 1.
-- [ ] Define the test area, speed limit, manual override, and stop condition.
-- [ ] Add basic state/mode display: `MANUAL`, `DEMO`, `STOPPED`, or `FAULT`.
-- [ ] Test start, stop, disconnect, and sensor-loss behavior.
-- [ ] Rehearse the same route at least three times; record failures and limits.
-
-## Acceptance
-
-The navigation demonstration starts only on an explicit action, stays within the agreed demo area, and can be stopped immediately. It must fail safe on loss of command or required sensor. Do not claim obstacle avoidance, GPS spoofing resistance, or robust autonomous navigation unless those features are actually implemented and tested.
+The LiDAR shown as optional in the historical blueprint is not assumed to be installed. No future safety or obstacle-detection capability is implied by this planning note.

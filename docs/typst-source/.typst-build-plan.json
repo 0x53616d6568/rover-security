@@ -1,45 +1,29 @@
 {
   "base": {
     "auto_apply": true,
-    "conflict_group": "document-base",
-    "id": "report-entry",
-    "kind": "asset",
+    "id": "existing-project",
+    "kind": "existing-project",
     "ownership": "global",
-    "path": "assets/report-entry.typ",
-    "reason": "General professional document fallback.",
-    "status": "ready"
+    "reason": "Preserve the user's existing Typst project as the base."
   },
   "catalog_version": "2026-07-17-affiliated-formats-v3",
   "channel": "typst-pdf",
   "confirmation_candidates": [],
-  "enhancements": [
-    {
-      "adoption": "A",
-      "auto_apply": true,
-      "conflict_group": null,
-      "id": "glossarium",
-      "kind": "universe-package",
-      "ownership": "semantic",
-      "reason": "Content evidence satisfies {\"defined_terms\": 5}",
-      "status": "ready",
-      "universe_ref": "@preview/glossarium:0.5.10",
-      "version": "0.5.10"
-    }
-  ],
+  "enhancements": [],
   "exclusions": [],
-  "fingerprint": "sha256:cfe606da670f463582e9cf30dc9921bdb119ff56e95b4039ee0612b50a39bba0",
+  "fingerprint": "sha256:2bce966976c68ffa6880272cb5ad04620222e7d425a7725a3b26ced1089d0a6a",
   "next_action": "minimal-compile-preflight",
   "optional_idea": null,
   "question": null,
   "reused": false,
   "schema_version": 1,
   "state": "ready",
-  "style_owner": "report-entry",
+  "style_owner": "existing-project",
   "typst_version": "typst 0.15.1 (9dfd3a08)",
   "preflight": {
     "status": "passed",
-    "command": "typst compile preflight.typ preflight.pdf",
-    "base": "report-entry",
-    "package": "@preview/glossarium:0.5.10"
+    "command": "typst compile .preflight.typ .preflight.pdf",
+    "base": "existing-project",
+    "package": "none; local import report-theme.typ"
   }
 }
