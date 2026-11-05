@@ -1,0 +1,10 @@
+{
+  "entry": "main.typ",
+  "metadata": {
+    "author": "University Project Team",
+    "subtitle": "A simple three-person university project",
+    "title": "ENISOLAR Rover — One-Week Demo Plan"
+  },
+  "mode": "report",
+  "theme": "report-theme.typ"
+}

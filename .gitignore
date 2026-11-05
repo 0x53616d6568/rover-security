@@ -1,0 +1,26 @@
+# Build outputs
+*.elf
+*.bin
+*.map
+*.o
+*.a
+build/
+.cache/
+
+# Local secrets and credentials
+.env
+.env.*
+!.env.example
+*.key
+*.pem
+*.p12
+*.pfx
+
+# Local test evidence (store approved artifacts in controlled storage)
+raw-captures/
+private-evidence/
+
+# Editor and OS files
+.DS_Store
+.vscode/
+.idea/
