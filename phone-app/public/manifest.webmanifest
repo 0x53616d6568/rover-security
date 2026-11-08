@@ -1,0 +1,17 @@
+{
+  "name": "ENISOLAR Rover Console",
+  "short_name": "Rover",
+  "description": "Phase 1 local BLE rover operator console.",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#0a0f1e",
+  "theme_color": "#0a0f1e",
+  "icons": [
+    {
+      "src": "/favicon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ]
+}

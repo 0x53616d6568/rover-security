@@ -1,0 +1,29 @@
+{
+  "base": {
+    "auto_apply": true,
+    "id": "existing-project",
+    "kind": "existing-project",
+    "ownership": "global",
+    "reason": "Preserve the user's existing Typst project as the base."
+  },
+  "catalog_version": "2026-07-17-affiliated-formats-v3",
+  "channel": "typst-pdf",
+  "confirmation_candidates": [],
+  "enhancements": [],
+  "exclusions": [],
+  "fingerprint": "sha256:2bce966976c68ffa6880272cb5ad04620222e7d425a7725a3b26ced1089d0a6a",
+  "next_action": "minimal-compile-preflight",
+  "optional_idea": null,
+  "question": null,
+  "reused": false,
+  "schema_version": 1,
+  "state": "ready",
+  "style_owner": "existing-project",
+  "typst_version": "typst 0.15.1 (9dfd3a08)",
+  "preflight": {
+    "status": "passed",
+    "command": "typst compile .preflight.typ .preflight.pdf",
+    "base": "existing-project",
+    "package": "none; local import report-theme.typ"
+  }
+}

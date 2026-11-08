@@ -1,0 +1,35 @@
+# Build outputs
+*.elf
+*.bin
+*.map
+*.o
+*.a
+build/
+.cache/
+.pio/
+.platformio_core/
+backup_before_update/
+
+# Local secrets and credentials
+secrets.h
+.env
+.env.*
+!.env.example
+*.key
+*.pem
+*.p12
+*.pfx
+
+# Local test evidence (store approved artifacts in controlled storage)
+raw-captures/
+private-evidence/
+
+# Editor and OS files
+.DS_Store
+.vscode/
+.idea/
+
+# Node / Vite
+node_modules/
+dist/
+*.local

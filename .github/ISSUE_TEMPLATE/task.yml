@@ -1,0 +1,39 @@
+name: One-week project task
+description: Small, testable work item for the university rover demo
+body:
+  - type: dropdown
+    id: owner
+    attributes:
+      label: Owner
+      options:
+        - Person 1 — Wiring and firmware
+        - Person 2 — Navigation and connectivity
+        - Person 3 — Dashboard and security
+    validations:
+      required: true
+  - type: textarea
+    id: task
+    attributes:
+      label: Task and expected result
+      placeholder: State the small change and how the team will know it works.
+    validations:
+      required: true
+  - type: dropdown
+    id: day
+    attributes:
+      label: Target day
+      options:
+        - Day 1
+        - Day 2
+        - Day 3
+        - Day 4
+        - Day 5
+    validations:
+      required: true
+  - type: textarea
+    id: safety
+    attributes:
+      label: Test and safety notes
+      description: Include simulator/bench/rover test and safe stop conditions.
+    validations:
+      required: true

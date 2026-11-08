@@ -1,0 +1,77 @@
+:root {
+  --font-sans: "Space Grotesk", "Segoe UI", system-ui, sans-serif;
+  --font-mono: "JetBrains Mono", "Consolas", monospace;
+
+  /* Light mint page theme taken from the reference image. */
+  --bg: #b6d7c3;
+  --bg-soft: #cfe5d8;
+  --surf: #25382c;
+  --surf-2: #395745;
+  --ink: #25382c;
+  --ink-card: #e9f5ed;
+  --mut: #395745;
+  --mut-card: #92a79c;
+  --line: #4e715c;
+  --line-strong: #658d74;
+
+  --acc: #4ade80;
+  --acc-soft: rgba(74, 222, 128, 0.16);
+  --amber: #f59e0b;
+  --sig: #86efac;
+  --pos: #fb7185;
+  --ok: #4ade80;
+  --ok-soft: rgba(74, 222, 128, 0.16);
+  --cand: #fbbf24;
+  --cand-soft: rgba(251, 191, 36, 0.16);
+  --tbd: #f472b6;
+  --tbd-soft: rgba(244, 114, 182, 0.16);
+  --stop: #ef4444;
+  --stop-soft: rgba(239, 68, 68, 0.16);
+
+  --radius-sm: 10px;
+  --radius-md: 16px;
+  --radius-lg: 24px;
+  --radius-pill: 999px;
+
+  --shadow-card: 0 18px 40px rgba(12, 19, 15, 0.22);
+  --shadow-glow: 0 0 0 1px rgba(74, 222, 128, 0.25), 0 12px 32px rgba(74, 222, 128, 0.12);
+
+  --motion-fast: 160ms;
+  --motion-med: 260ms;
+  --motion-slow: 420ms;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body,
+#root {
+  min-height: 100%;
+}
+
+body {
+  margin: 0;
+  background: var(--bg);
+  color: var(--ink);
+  font-family: var(--font-sans);
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+  overflow-x: hidden;
+}
+
+button,
+input,
+select {
+  font: inherit;
+}
+
+a {
+  color: var(--acc);
+}
+
+::selection {
+  background: var(--acc-soft);
+  color: var(--ink);
+}

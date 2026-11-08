@@ -1,0 +1,310 @@
+<!DOCTYPE html>
+<html lang="en"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<link rel="preconnect" href="https://fonts.googleapis.com"><link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;700&family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet"><title>Phase 1 Rover – Illustrative System Overview</title>
+<style>
+:root{--bg:#f4f5f2;--surf:#fff;--ink:#16202a;--mut:#56626e;--line:#c9d0d6;--pos:#c62828;--gnd:#222;--sig:#1565c0;
+--ok:#1b7a3d;--okb:#e3f4e8;--cand:#8a5a00;--candb:#fff1cf;--tbd:#a4144a;--tbdb:#fde4ee;--stop:#b00020;--acc:#0f4c5c;
+padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px);box-sizing:border-box}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#10161c;--surf:#18212a;--ink:#e8edf1;--mut:#9aa7b3;--line:#33414d;--pos:#ef5350;--gnd:#cfd8dc;--sig:#64b5f6;
+--ok:#6fd48f;--okb:#12301d;--cand:#ffc857;--candb:#35290a;--tbd:#ff7aa8;--tbdb:#3a1226;--stop:#ff5a6e;--acc:#6cc3d5}}
+*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--ink);font:15px/1.45 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif}
+.w{max-width:1240px;margin:0 auto;padding:20px 16px 40px}
+h1{font-size:26px;margin:0 0 4px}h2{font-size:17px;margin:0 0 8px;color:var(--acc)}
+.sub{color:var(--mut);margin:0 0 14px}
+.warn{border:3px solid var(--stop);background:var(--surf);padding:12px 14px;border-radius:8px;font-weight:700;margin-bottom:16px}
+.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(340px,1fr));gap:16px}
+.card{background:var(--surf);border:1px solid var(--line);border-radius:10px;padding:14px;min-width:0}
+.span2{grid-column:1/-1}
+.t{display:inline-block;font-size:11px;font-weight:800;letter-spacing:.03em;padding:2px 7px;border-radius:4px;border:1.5px solid;white-space:nowrap}
+.t.ok{color:var(--ok);background:var(--okb);border-color:var(--ok)}
+.t.cd{color:var(--cand);background:var(--candb);border-color:var(--cand)}
+.t.tbd{color:var(--tbd);background:var(--tbdb);border-color:var(--tbd);border-style:dashed}
+svg{width:100%;height:auto;display:block}svg text{font-family:system-ui,sans-serif;fill:var(--ink)}
+.s{font-size:11px}.m{font-size:12px;font-weight:700}.sm{font-size:10px;fill:var(--mut)}
+.bx{fill:var(--surf);stroke:var(--ink);stroke-width:1.5}
+.bc{fill:var(--candb);stroke:var(--cand);stroke-width:1.5}
+.bo{fill:var(--okb);stroke:var(--ok);stroke-width:1.5}
+.bt{fill:var(--tbdb);stroke:var(--tbd);stroke-width:1.5;stroke-dasharray:5 3}
+.pos{stroke:var(--pos);fill:none;stroke-width:3}.gnd{stroke:var(--gnd);fill:none;stroke-width:3}.sig{stroke:var(--sig);fill:none;stroke-width:2}
+.dash{stroke-dasharray:6 4}
+.stop{fill:var(--surf);stroke:var(--stop);stroke-width:3}
+table{border-collapse:collapse;width:100%;font-size:13px;min-width:640px}th,td{border:1px solid var(--line);padding:5px 8px;text-align:left;vertical-align:top}th{background:var(--bg)}ul{margin:6px 0 0;padding-left:18px}li{margin:3px 0}
+.leg{display:grid;grid-template-columns:repeat(auto-fit,minmax(230px,1fr));gap:8px 16px;align-items:center}
+.leg div{display:flex;gap:8px;align-items:center}
+.sw{width:36px;height:0;border-top:4px solid}
+.ph{border:2px solid var(--ink);border-radius:18px;padding:12px;max-width:300px;margin:auto;background:var(--bg)}
+.ph .row{display:flex;justify-content:space-between;gap:6px;font-size:12px;padding:3px 0;border-bottom:1px solid var(--line)}
+.st{display:flex;gap:4px;flex-wrap:wrap;margin:6px 0}.st span{font-size:10px;font-weight:700;padding:2px 6px;border:1px solid var(--line);border-radius:10px}
+.st .on{background:var(--acc);color:var(--bg)}
+.joy{width:90px;height:90px;border-radius:50%;border:2px solid var(--mut);margin:8px auto;position:relative}.joy:after{content:"";position:absolute;left:30px;top:30px;width:26px;height:26px;border-radius:50%;background:var(--sig)}
+.sbtn{background:var(--stop);color:#fff;text-align:center;font-weight:800;border-radius:8px;padding:8px;margin-top:6px}
+.v{font-size:10px;font-weight:700;color:var(--cand)}
+</style><style>
+:root,:root:not([data-theme="light"]){--bg:#0a0f1e;--surf:#111a33;--ink:#e8eefc;--mut:#8f9cc0;--line:#26335c;--acc:#35e0c9;--amber:#ffb020;--sig:#5bb8ff;--pos:#ff6b6b;--gnd:#c9d3f5;--ok:#4be39a;--okb:#0f2f2a;--cand:#ffc247;--candb:#33270c;--tbd:#ff7ab0;--tbdb:#35102a;--stop:#ff4d5e}
+@media (prefers-color-scheme:light){:root:not([data-theme="dark"]){--bg:#f5efe0;--surf:#fffaf0;--ink:#14213d;--mut:#5b6785;--line:#d9cfb6;--acc:#0b7a75;--amber:#e08700;--sig:#1856c4;--pos:#c62828;--gnd:#222;--ok:#14733f;--okb:#dff3e6;--cand:#8a5a00;--candb:#fff1cf;--tbd:#a4144a;--tbdb:#fde4ee;--stop:#b00020}}
+html{scroll-behavior:smooth;scroll-padding-top:70px}
+body{font-family:"Space Grotesk",system-ui,sans-serif;background:var(--bg);background-image:linear-gradient(var(--line) 1px,transparent 1px),linear-gradient(90deg,var(--line) 1px,transparent 1px);background-size:44px 44px;animation:grid 30s linear infinite}
+@keyframes grid{to{background-position:44px 44px}}
+.w{position:relative}
+h1{font-size:clamp(34px,6vw,64px);line-height:1;letter-spacing:-.03em;margin:0}.grad{background:linear-gradient(90deg,var(--amber),var(--acc));-webkit-background-clip:text;background-clip:text;color:transparent}
+h2{font-size:18px;color:var(--ink);display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+.hero{display:flex;gap:28px;align-items:center;padding:28px 4px 18px;flex-wrap:wrap}.sun{width:110px;flex:none}.rays{transform-origin:60px 60px;animation:spin 24s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}.kick{font:700 12px "JetBrains Mono",monospace;letter-spacing:.14em;color:var(--acc);margin:0 0 8px}
+.warn{border:2px solid var(--stop);background:linear-gradient(90deg,transparent 0 0),var(--surf);animation:pw 2.6s ease-in-out infinite}
+@keyframes pw{50%{box-shadow:0 0 0 6px color-mix(in srgb,var(--stop) 22%,transparent)}}
+.nav{position:sticky;top:max(8px,env(safe-area-inset-top,0px));z-index:20;display:flex;gap:6px;align-items:center;flex-wrap:wrap;padding:8px;margin:0 0 16px;border:1px solid var(--line);border-radius:14px;background:color-mix(in srgb,var(--surf) 82%,transparent);backdrop-filter:blur(10px)}
+.nav a{color:var(--ink);text-decoration:none;font-size:13px;padding:5px 10px;border-radius:99px;transition:.2s}.nav a:hover{background:var(--line)}.nav a.on{background:var(--acc);color:#04201d;font-weight:700}
+.sp{flex:1}.flt button,.mini{font:700 11px "JetBrains Mono",monospace;border:1px solid var(--line);background:transparent;color:var(--ink);padding:5px 9px;border-radius:8px;cursor:pointer;transition:.2s}
+.flt button.on,.mini.on{background:var(--acc);color:#04201d;border-color:var(--acc)}.flt button:hover,.mini:hover{transform:translateY(-1px)}
+.prog{position:fixed;left:0;top:0;height:3px;width:0;background:linear-gradient(90deg,var(--amber),var(--acc));z-index:50}
+.card{position:relative;overflow:hidden;border-radius:16px;transition:transform .3s,border-color .3s,opacity .6s;opacity:0;transform:translateY(24px)}
+.card.in{opacity:1;transform:none}.card:hover{border-color:var(--acc)}
+.card:before{content:"";position:absolute;inset:0;pointer-events:none;background:radial-gradient(260px circle at var(--mx,50%) var(--my,0),color-mix(in srgb,var(--acc) 14%,transparent),transparent 70%);opacity:0;transition:opacity .3s}.card:hover:before{opacity:1}
+svg .sig.dash{animation:flow 1s linear infinite}svg .pos.dash{animation:flow 1.6s linear infinite}@keyframes flow{to{stroke-dashoffset:-20}}
+svg .stop{animation:glow 2s ease-in-out infinite}@keyframes glow{50%{filter:drop-shadow(0 0 7px var(--stop))}}
+svg .bo,svg .bc,svg .bt{transition:opacity .3s,filter .25s}svg .bo:hover,svg .bc:hover,svg .bt:hover{filter:drop-shadow(0 0 6px currentColor);stroke-width:2.6}
+body[data-f=ok] svg .bc,body[data-f=ok] svg .bt,body[data-f=cd] svg .bo,body[data-f=cd] svg .bt,body[data-f=tbd] svg .bo,body[data-f=tbd] svg .bc{opacity:.12}
+body[data-f=ok] .t.cd,body[data-f=ok] .t.tbd,body[data-f=cd] .t.ok,body[data-f=cd] .t.tbd,body[data-f=tbd] .t.ok,body[data-f=tbd] .t.cd{opacity:.2}
+.t{font-family:"JetBrains Mono",monospace}table tr{transition:background .2s}table tr:hover td{background:color-mix(in srgb,var(--acc) 12%,transparent)}
+.ph{background:var(--bg);border-radius:26px;box-shadow:0 18px 40px #0006}.st span{cursor:pointer;transition:.25s}.st .on{background:var(--acc);color:#04201d}
+.st .on[data-m="FAULT"]{background:var(--stop);color:#fff}.st .on[data-m="SAFE STOP"]{background:var(--amber);color:#2a1a00}
+.big{width:100%;margin:4px 0}.joy{touch-action:none;cursor:grab;background:radial-gradient(circle,var(--line),transparent 70%)}.joy:after{display:none}
+.joy i{position:absolute;left:32px;top:32px;width:26px;height:26px;border-radius:50%;background:var(--sig);transition:transform .15s;box-shadow:0 0 12px var(--sig)}.joy.drag i{transition:none}
+.sbtn{width:100%;border:0;cursor:pointer;font:800 13px "Space Grotesk";transition:.2s}.sbtn:active{transform:scale(.97)}
+#tip{position:fixed;z-index:60;pointer-events:none;padding:4px 9px;border-radius:6px;font:700 11px "JetBrains Mono";background:var(--ink);color:var(--bg);opacity:0;transition:opacity .15s}
+@media (prefers-reduced-motion:reduce){*,*:before{animation:none!important;transition:none!important}.card{opacity:1;transform:none}}
+</style></head><body><div class="w">
+<header class="hero"><svg class="sun" viewBox="0 0 120 120" aria-hidden="true"><g class="rays"><g stroke="var(--amber)" stroke-width="5" stroke-linecap="round"><path d="M60 6v16M60 98v16M6 60h16M98 60h16M22 22l11 11M87 87l11 11M98 22L87 33M33 87L22 98"/></g></g><circle cx="60" cy="60" r="24" fill="var(--amber)"/></svg>
+<div><p class="kick">· PHASE 1 · ILLUSTRATIVE OVERVIEW</p><h1>Manual rover,<br><span class="grad">safety first.</span></h1>
+<p class="sub">Generic four-wheel skid-steer layout · one main ESP32 · one capture-only camera · pin map in §8–§9 is <b>proposed</b>, not verified.</p></div></header>
+<div class="warn">Concept illustration—not a construction schematic. Verify actual hardware, datasheets, pin map, supply ratings, motor stall current, protection, and physical stop before wiring or powering motors.</div>
+
+<nav class="nav" id="nav"><a href="#s1">Chassis</a><a href="#s2">Power</a><a href="#s3">Logic</a><a href="#s4">Boards</a><a href="#s5">Phone</a><a href="#s8">Pins</a><a href="#s9">PCB</a><a href="#s10">Decisions</a><a href="#s6">Behaviors</a><span class="sp"></span>
+<span class="flt" role="group" aria-label="Highlight by status"><button data-f="all" class="on">All</button><button data-f="ok">Confirmed</button><button data-f="cd">Candidate</button><button data-f="tbd">TBD</button></span></nav>
+<div class="prog" id="prog"></div>
+<div class="grid">
+
+<section class="card span2"><h2>Legend</h2>
+<div class="leg">
+<div><span class="t ok">CONFIRMED IN DESIGN</span> stated in Phase 1 scope</div>
+<div><span class="t cd">CANDIDATE—VERIFY</span> from older design / unverified</div>
+<div><span class="t tbd">TBD—DO NOT GUESS</span> value or topology not decided</div>
+<div><span class="sw" style="border-color:var(--pos)"></span> Positive supply (illustrative)</div>
+<div><span class="sw" style="border-color:var(--gnd)"></span> Ground — “verify against module design”</div>
+<div><span class="sw" style="border-color:var(--sig)"></span> Signal / data</div>
+<div><span class="sw" style="border-color:var(--ink);border-top-style:dashed"></span> Proposed / unspecified connection</div>
+<div><span class="sw" style="border-color:var(--stop);border-top-width:6px"></span> Physical motor cut-off (independent of app/BLE)</div>
+</div></section>
+
+<section class="card span2" id="s1"><h2>1 · Generic chassis — top-down (not to scale)</h2>
+<svg viewBox="0 0 900 460" role="img" aria-label="Top-down generic skid-steer rover layout">
+<text x="450" y="18" text-anchor="middle" class="m">FRONT</text>
+<rect x="250" y="30" width="400" height="400" rx="26" class="bx" stroke-dasharray="8 4"/>
+<text x="450" y="446" text-anchor="middle" class="sm">Generic body outline — chassis dimensions TBD</text>
+<!-- wheels -->
+<g class="bx"><rect x="190" y="60" width="50" height="100" rx="8"/><rect x="190" y="300" width="50" height="100" rx="8"/><rect x="660" y="60" width="50" height="100" rx="8"/><rect x="660" y="300" width="50" height="100" rx="8"/></g>
+<text x="215" y="215" text-anchor="middle" class="s">Left side</text><text x="685" y="215" text-anchor="middle" class="s">Right side</text>
+<text x="215" y="232" text-anchor="middle" class="sm">2 wheels</text><text x="685" y="232" text-anchor="middle" class="sm">2 wheels</text>
+<!-- motors -->
+<g class="bc"><rect x="262" y="80" width="62" height="56"/><rect x="262" y="320" width="62" height="56"/><rect x="576" y="80" width="62" height="56"/><rect x="576" y="320" width="62" height="56"/></g>
+<text x="293" y="104" text-anchor="middle" class="s">12 V DC</text><text x="293" y="118" text-anchor="middle" class="s">motor</text>
+<text x="293" y="344" text-anchor="middle" class="s">12 V DC</text><text x="293" y="358" text-anchor="middle" class="s">motor</text>
+<text x="607" y="104" text-anchor="middle" class="s">12 V DC</text><text x="607" y="118" text-anchor="middle" class="s">motor</text>
+<text x="607" y="344" text-anchor="middle" class="s">12 V DC</text><text x="607" y="358" text-anchor="middle" class="s">motor</text>
+<!-- drivers -->
+<rect x="262" y="190" width="90" height="80" class="bc"/><text x="307" y="224" text-anchor="middle" class="m">H-bridge L</text><text x="307" y="240" text-anchor="middle" class="s">BTS7960-style</text><text x="307" y="254" text-anchor="middle" class="s">(candidate)</text>
+<rect x="548" y="190" width="90" height="80" class="bc"/><text x="593" y="224" text-anchor="middle" class="m">H-bridge R</text><text x="593" y="240" text-anchor="middle" class="s">BTS7960-style</text><text x="593" y="254" text-anchor="middle" class="s">(candidate)</text>
+<!-- motor harness -->
+<path d="M293 190V136M293 270V320M607 190V136M607 270V320" class="pos"/>
+<path d="M303 190V136M303 270V320M597 190V136M597 270V320" class="gnd"/>
+<!-- center -->
+<rect x="385" y="120" width="130" height="90" class="bo"/><text x="450" y="158" text-anchor="middle" class="m">Main ESP32</text><text x="450" y="174" text-anchor="middle" class="s">dev board (×1)</text><text x="450" y="190" text-anchor="middle" class="sm">motor authority · safety</text>
+<rect x="385" y="45" width="130" height="50" class="bo"/><text x="450" y="66" text-anchor="middle" class="m">ESP32-CAM</text><text x="450" y="82" text-anchor="middle" class="s">OV2640 · capture only</text>
+<path d="M450 95V120" class="sig dash"/><text x="458" y="112" class="sm">UART (proposed)</text>
+<path d="M385 165H352V210" class="sig dash"/><path d="M515 165H548" class="sig dash"/><text x="360" y="150" class="sm">PWM/enable</text>
+<rect x="385" y="235" width="130" height="50" class="bo"/><text x="450" y="256" text-anchor="middle" class="m">Sensor group</text><text x="450" y="272" text-anchor="middle" class="s">see block diagram 3</text>
+<path d="M450 210V235" class="sig dash"/>
+<rect x="385" y="305" width="130" height="50" class="bx"/><text x="450" y="326" text-anchor="middle" class="m">Perfboard / PCB</text><text x="450" y="342" text-anchor="middle" class="s">low-voltage signals only</text>
+<path d="M450 285V305" class="sig dash"/>
+<rect x="385" y="372" width="130" height="46" class="bt"/><text x="450" y="392" text-anchor="middle" class="m">Battery + BMS + fuse</text><text x="450" y="408" text-anchor="middle" class="s">all ratings TBD</text>
+<path d="M385 395H280V376" class="pos"/><path d="M515 395H620V376" class="pos"/>
+<text x="150" y="30" class="sm">Motor harness: separate,</text><text x="150" y="42" class="sm">appropriately rated wiring —</text><text x="150" y="54" class="sm">gauge TBD</text>
+<text x="20" y="100" class="m">Motor count, rating,</text><text x="20" y="116" class="m">and arrangement must</text><text x="20" y="132" class="m">be confirmed.</text>
+<text x="20" y="215" class="m">Exact module, current</text><text x="20" y="231" class="m">capacity, cooling and</text><text x="20" y="247" class="m">wiring unverified.</text>
+</svg></section>
+
+<section class="card span2" id="s2"><h2>2 · Power &amp; motor-current block diagram (separate from logic)</h2>
+<svg viewBox="0 0 1000 330" role="img" aria-label="Power block diagram">
+<g class="bt"><rect x="10" y="40" width="110" height="70"/><rect x="150" y="40" width="110" height="70"/><rect x="290" y="40" width="90" height="70"/><rect x="410" y="40" width="90" height="70"/></g>
+<text x="65" y="70" text-anchor="middle" class="m">Battery pack</text><text x="65" y="88" text-anchor="middle" class="s">type/voltage TBD</text>
+<text x="205" y="70" text-anchor="middle" class="m">BMS / protection</text><text x="205" y="88" text-anchor="middle" class="s">TBD</text>
+<text x="335" y="70" text-anchor="middle" class="m">Fuse</text><text x="335" y="88" text-anchor="middle" class="s">rating TBD</text>
+<text x="455" y="70" text-anchor="middle" class="m">Main switch</text><text x="455" y="88" text-anchor="middle" class="s">rating TBD</text>
+<rect x="540" y="30" width="130" height="90" class="stop"/><text x="605" y="62" text-anchor="middle" class="m" style="fill:var(--stop)">PHYSICAL MOTOR</text><text x="605" y="78" text-anchor="middle" class="m" style="fill:var(--stop)">CUT-OFF</text><text x="605" y="96" text-anchor="middle" class="s">topology TBD</text><text x="605" y="110" text-anchor="middle" class="sm">independent of phone/BLE</text>
+<g class="bc"><rect x="710" y="10" width="110" height="60"/><rect x="710" y="90" width="110" height="60"/></g>
+<text x="765" y="36" text-anchor="middle" class="m">H-bridge L</text><text x="765" y="52" text-anchor="middle" class="s">candidate</text>
+<text x="765" y="116" text-anchor="middle" class="m">H-bridge R</text><text x="765" y="132" text-anchor="middle" class="s">candidate</text>
+<g class="bc"><rect x="870" y="10" width="120" height="60"/><rect x="870" y="90" width="120" height="60"/></g>
+<text x="930" y="36" text-anchor="middle" class="m">2 × motors</text><text x="930" y="52" text-anchor="middle" class="s">left · confirm</text>
+<text x="930" y="116" text-anchor="middle" class="m">2 × motors</text><text x="930" y="132" text-anchor="middle" class="s">right · confirm</text>
+<path d="M120 65H150M260 65H290M380 65H410M500 65H540M670 60H690V40H710M670 60H690V120H710M820 40H870M820 120H870" class="pos"/>
+<path d="M120 85H150M260 85H290M380 85H410M500 85H540" class="gnd" opacity=".001"/>
+<!-- logic branch -->
+<path d="M455 110V200" class="pos dash"/>
+<rect x="380" y="200" width="150" height="56" class="bt"/><text x="455" y="224" text-anchor="middle" class="m">Logic regulator(s)</text><text x="455" y="242" text-anchor="middle" class="s">ratings TBD</text>
+<path d="M530 228H620" class="pos"/><rect x="620" y="200" width="150" height="56" class="bo"/><text x="695" y="224" text-anchor="middle" class="m">Main ESP32 + ESP32-CAM</text><text x="695" y="242" text-anchor="middle" class="s">supply TBD</text>
+<text x="470" y="160" class="sm">logic branch tap point TBD</text>
+<!-- ground -->
+<path d="M30 300H970" class="gnd"/><text x="30" y="290" class="s">Ground return / common ground — verify against module design</text>
+<text x="500" y="320" text-anchor="middle" class="sm">Wire gauge, emergency-stop topology, stall current: TBD — select from verified datasheets. High current never passes through breadboard/perfboard.</text>
+<text x="690" y="170" class="s">Battery-V sense: see diagram 3 (ADC)</text>
+</svg></section>
+
+<section class="card span2" id="s3"><h2>3 · Logic, sensor &amp; telemetry block diagram</h2>
+<svg viewBox="0 0 900 470" role="img" aria-label="Logic block diagram">
+<defs><marker id="a" markerWidth="8" markerHeight="8" refX="6" refY="4" orient="auto"><path d="M0 0L8 4L0 8z" fill="currentColor"/></marker></defs>
+<g style="color:var(--sig)">
+<rect x="20" y="180" width="150" height="110" class="bo"/><text x="95" y="215" text-anchor="middle" class="m">Phone dashboard</text><text x="95" y="233" text-anchor="middle" class="s">joystick · STOP</text><text x="95" y="249" text-anchor="middle" class="s">telemetry view</text>
+<path d="M170 235H360" class="sig" marker-end="url(#a)"/><path d="M360 255H170" class="sig" marker-end="url(#a)"/>
+<text x="265" y="228" text-anchor="middle" class="m">BLE (local)</text><text x="265" y="275" text-anchor="middle" class="sm">commands ↔ telemetry</text>
+<rect x="360" y="170" width="180" height="130" class="bo"/><text x="450" y="205" text-anchor="middle" class="m">MAIN ESP32 (×1)</text><text x="450" y="223" text-anchor="middle" class="s">motor authority</text><text x="450" y="237" text-anchor="middle" class="s">safety state</text><text x="450" y="251" text-anchor="middle" class="s">sensor read · telemetry</text><text x="450" y="287" text-anchor="middle" class="sm">proposed pin map: see §8–§10</text>
+<!-- drivers -->
+<rect x="330" y="20" width="110" height="60" class="bc"/><text x="385" y="46" text-anchor="middle" class="m">H-bridge L</text><text x="385" y="62" text-anchor="middle" class="s">candidate</text>
+<rect x="460" y="20" width="110" height="60" class="bc"/><text x="515" y="46" text-anchor="middle" class="m">H-bridge R</text><text x="515" y="62" text-anchor="middle" class="s">candidate</text>
+<path d="M395 170L385 80M505 170L515 80" class="sig dash"/>
+<text x="305" y="125" text-anchor="end" class="s">PWM / enable</text><text x="305" y="139" text-anchor="end" class="sm">(per side, verify)</text>
+<text x="450" y="12" text-anchor="middle" class="sm">motor outputs → power harness (diagram 2), not through logic boards</text>
+<!-- cam -->
+<path d="M420 300V380" class="sig dash" marker-end="url(#a)"/><path d="M480 380V300" class="sig dash" marker-end="url(#a)"/>
+<text x="410" y="345" text-anchor="end" class="s">capture request</text><text x="490" y="345" class="s">ack / status</text>
+<rect x="360" y="380" width="180" height="80" class="bo"/><text x="450" y="408" text-anchor="middle" class="m">ESP32-CAM + OV2640</text><text x="450" y="426" text-anchor="middle" class="s">UART (proposed) · on request</text><text x="450" y="442" text-anchor="middle" class="s">NO drive commands · no motor authority</text>
+<!-- sensors -->
+<g id="sens"></g>
+</g>
+<script>/*placeholder*/</script>
+<g class="s">
+<rect x="680" y="14" width="210" height="40" class="bo"/><text x="690" y="31" class="m">NEO-6M GPS</text><text x="690" y="46" class="sm">UART · if fitted &amp; verified</text>
+<rect x="680" y="66" width="210" height="40" class="bo"/><text x="690" y="83" class="m">MPU-6050 IMU</text><text x="690" y="98" class="sm">I²C · address/pull-ups verify</text>
+<rect x="680" y="118" width="210" height="40" class="bo"/><text x="690" y="135" class="m">QMC5883L magnetometer</text><text x="690" y="150" class="sm">I²C · shares bus (verify)</text>
+<rect x="680" y="170" width="210" height="40" class="bo"/><text x="690" y="187" class="m">Wheel encoders</text><text x="690" y="202" class="sm">GPIO / interrupt inputs</text>
+<rect x="680" y="222" width="210" height="40" class="bo"/><text x="690" y="239" class="m">DHT22 temp / humidity</text><text x="690" y="254" class="sm">GPIO · pull-up per module TBD</text>
+<rect x="680" y="274" width="210" height="40" class="bt"/><text x="690" y="291" class="m">Optional LiDAR</text><text x="690" y="306" class="sm">module/interface unknown — only if confirmed</text>
+<rect x="680" y="326" width="210" height="62" class="bt"/><text x="690" y="343" class="m">Battery-V divider (if installed)</text><text x="690" y="358" class="sm">R1 = TBD · R2 = TBD (do not invent)</text><text x="690" y="372" class="sm">protected / calibrated → ADC</text>
+<rect x="680" y="400" width="210" height="40" class="bt"/><text x="690" y="417" class="m">SD / storage (optional)</text><text x="690" y="432" class="sm">only if fitted &amp; connected to intended board</text>
+<rect x="680" y="450" width="210" height="16" class="bt"/><text x="690" y="462" class="sm">Motor-current feedback: only if driver output verified</text>
+</g>
+<g class="sig dash" style="stroke:var(--sig)">
+<path d="M540 178L680 34M540 195L680 86M540 212L680 138M540 229L680 190M540 246L680 242M540 263L680 294M540 280L680 357M540 294L680 420"/></g>
+</svg>
+<p class="sub">Interfaces labeled at documented level only. Sensor values reach the phone with units and a valid / stale / unavailable flag.</p></section>
+
+<section class="card" id="s4"><h2>4 · Boards &amp; wiring practice</h2>
+<svg viewBox="0 0 440 250" role="img" aria-label="Board types">
+<rect x="10" y="10" width="200" height="130" rx="6" class="bx"/><text x="110" y="34" text-anchor="middle" class="m">Soldered perfboard / PCB</text>
+<text x="110" y="52" text-anchor="middle" class="s">low-voltage signal conditioning</text><text x="110" y="66" text-anchor="middle" class="s">+ connectors</text>
+<rect x="30" y="80" width="70" height="26" class="bt"/><text x="65" y="97" text-anchor="middle" class="sm">passives TBD</text><rect x="118" y="80" width="70" height="26" class="bx"/><text x="153" y="97" text-anchor="middle" class="sm">connectors</text>
+<text x="110" y="128" text-anchor="middle" class="sm">NO motor / battery current</text>
+<rect x="230" y="10" width="200" height="130" rx="6" class="bc"/><text x="330" y="34" text-anchor="middle" class="m">Solderless breadboard</text>
+<text x="330" y="52" text-anchor="middle" class="s">low-current logic prototyping only</text><text x="330" y="68" text-anchor="middle" class="s">ESP32 breakout · sensor signals</text><text x="330" y="84" text-anchor="middle" class="s">test points</text>
+<text x="330" y="128" text-anchor="middle" class="sm">NOT for motors, drivers or battery</text>
+<rect x="10" y="160" width="420" height="80" rx="6" class="bx" stroke="var(--pos)" stroke-width="3"/><text x="220" y="186" text-anchor="middle" class="m">Separate rated motor harness</text><text x="220" y="204" text-anchor="middle" class="s">battery/protection ⇄ drivers ⇄ motors</text><text x="220" y="222" text-anchor="middle" class="sm">gauge, connectors, crimps: TBD</text>
+</svg></section>
+
+<section class="card" id="s5"><h2>5 · Phone dashboard (concept)</h2>
+<div class="ph"><div class="row"><b>BLE link</b><button id="lnk" class="mini on">connected</button></div>
+<div class="st" id="st"><span data-m="DISARMED" class="on">DISARMED</span><span data-m="MANUAL">MANUAL</span><span data-m="SAFE STOP">SAFE STOP</span><span data-m="FAULT">FAULT</span></div>
+<button id="arm" class="mini big">ARM → MANUAL</button>
+<div class="joy" id="joy"><i id="knob"></i></div><div class="row"><b>L / R cmd</b><span id="cmd">0 / 0 % (inactive)</span></div>
+<button id="sstop" class="sbtn">SOFTWARE STOP</button>
+<div class="row"><b>GPS</b><span>lat/lon · valid</span></div><div class="row"><b>Heading</b><span>° · stale</span></div>
+<div class="row"><b>Temp / RH</b><span>°C / % · valid</span></div><div class="row"><b>Battery</b><span>V · unavailable</span></div>
+<div class="row"><b>Camera</b><span>idle</span></div><p class="sm" id="note" style="margin:6px 0 0">Illustrative simulation, not measured behavior.</p></div><p class="sub">Software STOP is a different control from the red physical cut-off on the rover.</p></section>
+
+<section class="card span2" id="s8"><h2>8 · Proposed pin map — main ESP32 <span class="t cd">PROPOSED—VERIFY</span></h2>
+<p class="sub">Assumes a 30/38-pin ESP32-WROOM-32 dev board. Module-side pins follow common breakout conventions (BTS7960/IBT-2, GY-521, GY-271, NEO-6M, DHT22) and must be checked against your exact boards. GPIOs were chosen to avoid strapping pins (0, 2, 5, 12, 15), boot-time PWM glitches (GPIO14) and flash pins, and to keep encoders on input-only pins.</p>
+<div style="overflow-x:auto"><table>
+<tr><th>Function</th><th>ESP32 GPIO</th><th>Module pin</th><th>Notes / risk</th></tr>
+<tr><td>Left drive fwd PWM</td><td>25</td><td>L-driver RPWM</td><td>PWM frequency TBD per driver datasheet</td></tr>
+<tr><td>Left drive rev PWM</td><td>26</td><td>L-driver LPWM</td><td>Never drive RPWM+LPWM together (firmware interlock)</td></tr>
+<tr><td>Left enable</td><td>19</td><td>L-driver R_EN + L_EN tied</td><td>External pull-down (value TBD) keeps driver off at reset</td></tr>
+<tr><td>Right drive fwd PWM</td><td>27</td><td>R-driver RPWM</td><td></td></tr>
+<tr><td>Right drive rev PWM</td><td>13</td><td>R-driver LPWM</td><td></td></tr>
+<tr><td>Right enable</td><td>23</td><td>R-driver R_EN + L_EN tied</td><td>Pull-down TBD, as above</td></tr>
+<tr><td>I²C SDA / SCL</td><td>21 / 22</td><td>MPU-6050 SDA/SCL, QMC5883L SDA/SCL</td><td>Addresses typically 0x68 (AD0 low) and 0x0D; avoid doubled breakout pull-ups</td></tr>
+<tr><td>GPS RX (from GPS TX)</td><td>4</td><td>NEO-6M TXD</td><td>UART1 remapped; typical default 9600 baud—verify</td></tr>
+<tr><td>GPS TX (to GPS RX)</td><td>33</td><td>NEO-6M RXD</td><td>Optional; receive-only works for NMEA</td></tr>
+<tr><td>Encoders 1–4</td><td>34, 35, 36, 39</td><td>encoder signal outputs</td><td>Input-only, no internal pull-ups; encoder type and output level unverified</td></tr>
+<tr><td>DHT22 data</td><td>18</td><td>DHT22 DATA</td><td>Data pull-up per datasheet/breakout (skip if breakout has one)</td></tr>
+<tr><td>Battery sense</td><td>32 (ADC1)</td><td>divider midpoint</td><td>R1/R2 TBD; midpoint must stay within ADC limit at full battery</td></tr>
+<tr><td>UART to CAM TX / RX</td><td>17 / 16</td><td>ESP32-CAM U0RXD (GPIO3) / U0TXD (GPIO1)</td><td>Cross-wired TX↔RX, 3.3 V logic, common GND. GPIO16/17 are unavailable on WROVER (PSRAM)</td></tr>
+<tr><td>Motor-current IS pins</td><td>not assigned</td><td>R_IS / L_IS</td><td>Only if verified; needs a scaled ADC path</td></tr>
+<tr><td>SD card</td><td>not assigned</td><td>—</td><td>If used, prefer the ESP32-CAM board's own slot; its pins are shared with the camera board's GPIO2/4/12/13/14/15</td></tr>
+</table></div>
+<p class="sub">Driver module logic (VCC) is commonly 5 V on IBT-2-style boards with 3.3 V inputs often accepted — verify the logic-high threshold in the datasheet. Driver power pins (B+/B−) and motor pins (M+/M−) never touch this logic board.</p></section>
+
+<section class="card span2" id="s9"><h2>9 · PCB-style wiring view — low-voltage signal board only <span class="t cd">PROPOSED—VERIFY</span></h2><div style="overflow-x:auto"><svg viewBox="0 0 1200 760" style="min-width:900px" role="img" aria-label="PCB style signal routing, symbolic"><rect x="10" y="10" width="1180" height="740" rx="16" fill="#0e5a3a" stroke="#d8c36a" stroke-width="3"/><circle cx="34" cy="34" r="9" fill="#0b3a26" stroke="#d8c36a"/><circle cx="1166" cy="34" r="9" fill="#0b3a26" stroke="#d8c36a"/><circle cx="34" cy="726" r="9" fill="#0b3a26" stroke="#d8c36a"/><circle cx="1166" cy="726" r="9" fill="#0b3a26" stroke="#d8c36a"/><text x="60" y="48" font-size="18" font-weight="700" fill="#f1f1e6" font-family="monospace"> P1 · LOW-VOLTAGE SIGNAL BOARD (concept)</text><rect x="500" y="70" width="200" height="630" rx="8" fill="#1d2832" stroke="#f1f1e6" stroke-width="2"/><text x="600" y="360" text-anchor="middle" font-size="18" font-weight="700" fill="#f1f1e6">MAIN ESP32</text><text x="600" y="384" text-anchor="middle" font-size="14" fill="#cfd8dc">dev board</text><text x="600" y="420" text-anchor="middle" font-size="13" fill="#cfd8dc">pin order symbolic —</text><text x="600" y="438" text-anchor="middle" font-size="13" fill="#cfd8dc">check your silkscreen</text><text x="40" y="560" font-size="14" fill="#f1f1e6">Not on this board:</text><text x="40" y="582" font-size="13" fill="#d7e6dc">battery, B+/B−, M+/M−,</text><text x="40" y="602" font-size="13" fill="#d7e6dc">motor harness, fuse, switch,</text><text x="40" y="622" font-size="13" fill="#d7e6dc">physical cut-off</text><text x="40" y="700" font-size="13" fill="#d7e6dc">Every connector also needs GND + supply (not drawn)</text><rect x="930" y="89" width="230" height="126" rx="6" fill="#0b3a26" stroke="#ffb74d" stroke-width="2.5"/><text x="930" y="80" font-size="15" font-weight="700" fill="#ffb74d">① J2 Left driver logic</text><circle cx="930" cy="110" r="6" fill="#d8c36a"/><text x="946" y="115" font-size="14" fill="#f1f1e6">RPWM  ← GPIO25</text><circle cx="930" cy="152" r="6" fill="#d8c36a"/><text x="946" y="157" font-size="14" fill="#f1f1e6">LPWM  ← GPIO26</text><circle cx="930" cy="194" r="6" fill="#d8c36a"/><text x="946" y="199" font-size="14" fill="#f1f1e6">EN (R_EN+L_EN) ← GPIO19</text><path d="M700 110H930" stroke="#ffb74d" stroke-width="4" fill="none"/><text x="690" y="115" text-anchor="end" font-size="14" fill="#fff" font-family="monospace">GPIO25</text><path d="M700 152H930" stroke="#ffb74d" stroke-width="4" fill="none"/><text x="690" y="157" text-anchor="end" font-size="14" fill="#fff" font-family="monospace">GPIO26</text><path d="M700 194H930" stroke="#ffb74d" stroke-width="4" fill="none"/><text x="690" y="199" text-anchor="end" font-size="14" fill="#fff" font-family="monospace">GPIO19</text><rect x="930" y="243" width="230" height="126" rx="6" fill="#0b3a26" stroke="#ffb74d" stroke-width="2.5"/><text x="930" y="234" font-size="15" font-weight="700" fill="#ffb74d">② J3 Right driver logic</text><circle cx="930" cy="264" r="6" fill="#d8c36a"/><text x="946" y="269" font-size="14" fill="#f1f1e6">RPWM  ← GPIO27</text><circle cx="930" cy="306" r="6" fill="#d8c36a"/><text x="946" y="311" font-size="14" fill="#f1f1e6">LPWM  ← GPIO13</text><circle cx="930" cy="348" r="6" fill="#d8c36a"/><text x="946" y="353" font-size="14" fill="#f1f1e6">EN (R_EN+L_EN) ← GPIO23</text><path d="M700 264H930" stroke="#ffb74d" stroke-width="4" fill="none"/><text x="690" y="269" text-anchor="end" font-size="14" fill="#fff" font-family="monospace">GPIO27</text><path d="M700 306H930" stroke="#ffb74d" stroke-width="4" fill="none"/><text x="690" y="311" text-anchor="end" font-size="14" fill="#fff" font-family="monospace">GPIO13</text><path d="M700 348H930" stroke="#ffb74d" stroke-width="4" fill="none"/><text x="690" y="353" text-anchor="end" font-size="14" fill="#fff" font-family="monospace">GPIO23</text><rect x="930" y="397" width="230" height="84" rx="6" fill="#0b3a26" stroke="#81d4fa" stroke-width="2.5"/><text x="930" y="388" font-size="15" font-weight="700" fill="#81d4fa">③ J4 I²C bus</text><circle cx="930" cy="418" r="6" fill="#d8c36a"/><text x="946" y="423" font-size="14" fill="#f1f1e6">SDA ↔ GPIO21</text><circle cx="930" cy="460" r="6" fill="#d8c36a"/><text x="946" y="465" font-size="14" fill="#f1f1e6">SCL ← GPIO22</text><path d="M700 418H930" stroke="#81d4fa" stroke-width="4" fill="none"/><text x="690" y="423" text-anchor="end" font-size="14" fill="#fff" font-family="monospace">GPIO21</text><path d="M700 460H930" stroke="#81d4fa" stroke-width="4" fill="none"/><text x="690" y="465" text-anchor="end" font-size="14" fill="#fff" font-family="monospace">GPIO22</text><rect x="930" y="509" width="230" height="42" rx="6" fill="#0b3a26" stroke="#a5d6a7" stroke-width="2.5"/><text x="930" y="500" font-size="15" font-weight="700" fill="#a5d6a7">④ J5 DHT22</text><circle cx="930" cy="530" r="6" fill="#d8c36a"/><text x="946" y="535" font-size="14" fill="#f1f1e6">DATA ↔ GPIO18</text><path d="M700 530H930" stroke="#a5d6a7" stroke-width="4" fill="none"/><text x="690" y="535" text-anchor="end" font-size="14" fill="#fff" font-family="monospace">GPIO18</text><rect x="930" y="579" width="230" height="84" rx="6" fill="#0b3a26" stroke="#f48fb1" stroke-width="2.5"/><text x="930" y="570" font-size="15" font-weight="700" fill="#f48fb1">⑤ J6 ESP32-CAM UART</text><circle cx="930" cy="600" r="6" fill="#d8c36a"/><text x="946" y="605" font-size="14" fill="#f1f1e6">U0RXD ← GPIO17 (TX)</text><circle cx="930" cy="642" r="6" fill="#d8c36a"/><text x="946" y="647" font-size="14" fill="#f1f1e6">U0TXD → GPIO16 (RX)</text><path d="M700 600H930" stroke="#f48fb1" stroke-width="4" fill="none"/><text x="690" y="605" text-anchor="end" font-size="14" fill="#fff" font-family="monospace">GPIO17</text><path d="M700 642H930" stroke="#f48fb1" stroke-width="4" fill="none"/><text x="690" y="647" text-anchor="end" font-size="14" fill="#fff" font-family="monospace">GPIO16</text><rect x="40" y="89" width="230" height="42" rx="6" fill="#0b3a26" stroke="#ef9a9a" stroke-width="2.5"/><text x="40" y="80" font-size="15" font-weight="700" fill="#ef9a9a">⑥ J7 Battery sense</text><circle cx="270" cy="110" r="6" fill="#d8c36a"/><text x="56" y="115" font-size="14" fill="#f1f1e6">DIV-MID → GPIO32</text><path d="M270 110H500" stroke="#ef9a9a" stroke-width="4" fill="none"/><text x="510" y="115" font-size="14" fill="#fff" font-family="monospace">GPIO32</text><rect x="40" y="179" width="230" height="168" rx="6" fill="#0b3a26" stroke="#ce93d8" stroke-width="2.5"/><text x="40" y="170" font-size="15" font-weight="700" fill="#ce93d8">⑦ J1 Encoders</text><circle cx="270" cy="200" r="6" fill="#d8c36a"/><text x="56" y="205" font-size="14" fill="#f1f1e6">ENC1 → GPIO34</text><circle cx="270" cy="242" r="6" fill="#d8c36a"/><text x="56" y="247" font-size="14" fill="#f1f1e6">ENC2 → GPIO35</text><circle cx="270" cy="284" r="6" fill="#d8c36a"/><text x="56" y="289" font-size="14" fill="#f1f1e6">ENC3 → GPIO36</text><circle cx="270" cy="326" r="6" fill="#d8c36a"/><text x="56" y="331" font-size="14" fill="#f1f1e6">ENC4 → GPIO39</text><path d="M270 200H500" stroke="#ce93d8" stroke-width="4" fill="none"/><text x="510" y="205" font-size="14" fill="#fff" font-family="monospace">GPIO34</text><path d="M270 242H500" stroke="#ce93d8" stroke-width="4" fill="none"/><text x="510" y="247" font-size="14" fill="#fff" font-family="monospace">GPIO35</text><path d="M270 284H500" stroke="#ce93d8" stroke-width="4" fill="none"/><text x="510" y="289" font-size="14" fill="#fff" font-family="monospace">GPIO36</text><path d="M270 326H500" stroke="#ce93d8" stroke-width="4" fill="none"/><text x="510" y="331" font-size="14" fill="#fff" font-family="monospace">GPIO39</text><rect x="40" y="395" width="230" height="84" rx="6" fill="#0b3a26" stroke="#fff176" stroke-width="2.5"/><text x="40" y="386" font-size="15" font-weight="700" fill="#fff176">⑧ J8 GPS (NEO-6M)</text><circle cx="270" cy="416" r="6" fill="#d8c36a"/><text x="56" y="421" font-size="14" fill="#f1f1e6">GPS TXD → GPIO4</text><circle cx="270" cy="458" r="6" fill="#d8c36a"/><text x="56" y="463" font-size="14" fill="#f1f1e6">GPS RXD ← GPIO33</text><path d="M270 416H500" stroke="#fff176" stroke-width="4" fill="none"/><text x="510" y="421" font-size="14" fill="#fff" font-family="monospace">GPIO4</text><path d="M270 458H500" stroke="#fff176" stroke-width="4" fill="none"/><text x="510" y="463" font-size="14" fill="#fff" font-family="monospace">GPIO33</text></svg></div><h3 style="font-size:15px;margin:14px 0 4px">How to read this view</h3>
+<ul><li>Dots are connector pins; each coloured line is one signal trace. Labels show ESP32 GPIO number and module pin function. Traces never cross.</li>
+<li>Left side = sensor inputs; right side = outputs to drivers and links to other modules.</li>
+<li>Symbolic only: this is a routing concept, not a footprint or Gerber layout. Real pin positions come from your dev board.</li></ul>
+<h3 style="font-size:15px;margin:14px 0 4px">Trace colour key</h3>
+<p class="sub"><span style="display:inline-block;width:14px;height:14px;background:#ffb74d;border-radius:3px;vertical-align:middle;margin-right:4px"></span>Motor-driver logic &nbsp; <span style="display:inline-block;width:14px;height:14px;background:#81d4fa;border-radius:3px;vertical-align:middle;margin-right:4px"></span>I²C &nbsp; <span style="display:inline-block;width:14px;height:14px;background:#a5d6a7;border-radius:3px;vertical-align:middle;margin-right:4px"></span>DHT22 &nbsp; <span style="display:inline-block;width:14px;height:14px;background:#f48fb1;border-radius:3px;vertical-align:middle;margin-right:4px"></span>CAM UART &nbsp; <span style="display:inline-block;width:14px;height:14px;background:#ce93d8;border-radius:3px;vertical-align:middle;margin-right:4px"></span>Encoders &nbsp; <span style="display:inline-block;width:14px;height:14px;background:#fff176;border-radius:3px;vertical-align:middle;margin-right:4px"></span>GPS UART &nbsp; <span style="display:inline-block;width:14px;height:14px;background:#ef9a9a;border-radius:3px;vertical-align:middle;margin-right:4px"></span>Battery sense</p>
+<h3 style="font-size:15px;margin:14px 0 4px">What each connector does</h3>
+<ul>
+<li><b>① ② Driver logic:</b> RPWM sets forward speed, LPWM reverse speed, EN enables the bridge. Add an external pull-down on EN (value TBD) so motors stay off at reset. Never drive RPWM and LPWM together on one side. These carry logic signals only; motor current goes on the separate harness.</li>
+<li><b>③ I²C:</b> one shared two-wire bus to the MPU-6050 and QMC5883L. Check each breakout's address and how many pull-up resistors are already fitted before adding any.</li>
+<li><b>④ DHT22:</b> single data line. It needs a pull-up per its datasheet unless the breakout includes one.</li>
+<li><b>⑤ CAM UART:</b> TX goes to the camera's RX and RX to its TX (crossed), 3.3 V logic, shared ground. Only capture requests and status travel here, never drive commands.</li>
+<li><b>⑥ Battery sense:</b> the midpoint of a resistor divider (R1/R2 TBD) feeds an ADC1 pin. Compute it so full-battery voltage stays inside the ADC limit.</li>
+<li><b>⑦ Encoders:</b> four input-only pins. Confirm encoder type and output voltage first.</li>
+<li><b>⑧ GPS:</b> GPS TXD goes to ESP32 RX (GPIO4). GPIO33 back to GPS RXD is optional.</li></ul></section>
+
+<section class="card span2" id="s10"><h2>10 · Architecture decisions &amp; documentation notes</h2>
+<ul>
+<li><b>ADR-1 Single motor authority:</b> only the main ESP32 drives PWM/EN; the CAM sees UART only. Consequence: camera faults cannot move the rover.</li>
+<li><b>ADR-2 Enable pulled down in hardware:</b> EN lines have external pull-downs (TBD value) so drivers stay off during reset/boot, independent of firmware.</li>
+<li><b>ADR-3 Physical cut-off outside the logic board:</b> acts on motor power, not on a GPIO. Implementation TBD.</li>
+<li><b>ADR-4 Shared I²C bus:</b> IMU and magnetometer on GPIO21/22; confirm addresses and pull-up count.</li>
+<li><b>Datasheet honesty:</b> I can't read your actual boards. Module pin names above are typical conventions; ESP32 GPIO choices are my proposal from known ESP32 pin constraints. Before building, confirm each against your datasheets, then change status tags to CONFIRMED.</li>
+<li><b>Critique:</b> fixes needed before layout: confirm logic voltage of every module, decide pull-down/divider values from datasheets, measure the 500 ms stop on hardware.</li>
+</ul></section>
+
+<section class="card span2" id="s6"><h2>6 · Intended behaviors <span class="t cd">NOT TESTED RESULTS</span></h2>
+<ul>
+<li>Motors inactive at boot/reset; rover starts <b>DISARMED</b>. <span class="t ok">CONFIRMED IN DESIGN</span></li>
+<li>Manual commands bounded (limits TBD). Stop on BLE disconnect or expired command.</li>
+<li>Command-expiry stop timing: <b>500 ms — target; must be measured on the real rover.</b></li>
+<li>Camera only captures when the operator asks; it cannot command motors.</li>
+<li>Physical cut-off removes motor power regardless of phone, BLE or firmware state; circuit implementation <span class="t tbd">TBD—DO NOT GUESS</span> pending real driver and power hardware.</li>
+<li>Out of scope: second main ESP32, Wi-Fi, cloud, MQTT, autonomy, waypoints, patrol, obstacle avoidance, AI security.</li>
+</ul></section>
+
+<section class="card span2" id="s7"><h2>7 · Design critique notes</h2>
+<ul><li><b>Hierarchy:</b> safety banner first, then legend, chassis, power, logic. Red is reserved for stop/safety.</li>
+<li><b>Accuracy:</b> every unspecified link is dashed; no pins, values, models or dimensions invented.</li>
+<li><b>Accessibility:</b> tags rely on text and border style, not color alone; dark mode supported.</li>
+<li><b>Known limit:</b> the chassis view is topological, so the harness routing is symbolic.</li></ul></section>
+</div></div><div id="tip"></div><script>
+(function(){var $=function(q,r){return(r||document).querySelector(q)},$$=function(q){return[].slice.call(document.querySelectorAll(q))};
+var io=new IntersectionObserver(function(e){e.forEach(function(x){if(x.isIntersecting)x.target.classList.add("in")})},{threshold:.08});
+$$(".card").forEach(function(c,i){c.style.transitionDelay=(i%2)*80+"ms";io.observe(c);c.addEventListener("pointermove",function(e){var r=c.getBoundingClientRect();c.style.setProperty("--mx",e.clientX-r.left+"px");c.style.setProperty("--my",e.clientY-r.top+"px")})});
+setTimeout(function(){$$(".card").forEach(function(c){c.classList.add("in")})},2500);
+var links=$$(".nav a"),secs=links.map(function(a){return $(a.getAttribute("href"))});
+function sc(){var h=document.documentElement,p=h.scrollTop/(h.scrollHeight-h.clientHeight||1);$("#prog").style.width=p*100+"%";var cur=0;secs.forEach(function(x,i){if(x&&x.getBoundingClientRect().top<140)cur=i});links.forEach(function(a,i){a.classList.toggle("on",i==cur)})}
+addEventListener("scroll",sc,{passive:true});sc();
+$$(".flt button").forEach(function(b){b.onclick=function(){$$(".flt button").forEach(function(x){x.classList.remove("on")});b.classList.add("on");document.body.dataset.f=b.dataset.f}});
+var tip=$("#tip"),nm={bo:"CONFIRMED IN DESIGN",bc:"CANDIDATE—VERIFY",bt:"TBD—DO NOT GUESS"};
+document.addEventListener("pointermove",function(e){var t=e.target.closest&&e.target.closest("svg rect");var k=t&&["bo","bc","bt"].filter(function(c){return t.classList.contains(c)})[0];if(k){tip.textContent=nm[k];tip.style.opacity=1;tip.style.left=e.clientX+12+"px";tip.style.top=e.clientY+14+"px"}else tip.style.opacity=0});
+// phone sim
+var mode="DISARMED",link=true,ch=$$("#st span"),cmd=$("#cmd"),note=$("#note"),joy=$("#joy"),kn=$("#knob"),vx=0,vy=0;
+function setM(m,msg){mode=m;ch.forEach(function(x){x.classList.toggle("on",x.dataset.m==m)});$("#arm").textContent=m=="MANUAL"?"DISARM":"ARM → MANUAL";if(m!="MANUAL"){vx=vy=0;kn.style.transform=""}upd();note.textContent=msg||"Illustrative simulation, not measured behavior."}
+function upd(){var on=mode=="MANUAL"&&link,l=on?Math.max(-100,Math.min(100,Math.round(vy+vx))):0,r=on?Math.max(-100,Math.min(100,Math.round(vy-vx))):0;cmd.textContent=l+" / "+r+" %"+(on?" (bounded)":" (inactive)")}
+$("#arm").onclick=function(){if(mode=="MANUAL")setM("DISARMED");else if(link&&mode!="FAULT")setM("MANUAL","Armed: manual commands bounded to ±100 %.");else note.textContent="Needs BLE link and no fault."};
+$("#sstop").onclick=function(){setM("SAFE STOP","Software STOP pressed. The physical cut-off is separate hardware.")};
+$("#lnk").onclick=function(){link=!link;this.classList.toggle("on",link);this.textContent=link?"connected":"lost";if(!link&&mode=="MANUAL")setM("SAFE STOP","Link lost → stop (intended; 500 ms target must be measured on the rover).");else upd()};
+ch.forEach(function(x){x.onclick=function(){if(x.dataset.m=="MANUAL")$("#arm").click();else setM(x.dataset.m)}});
+function mv(e){var r=joy.getBoundingClientRect(),dx=e.clientX-r.left-r.width/2,dy=e.clientY-r.top-r.height/2,m=r.width/2-13,d=Math.hypot(dx,dy);if(d>m){dx*=m/d;dy*=m/d}kn.style.transform="translate("+dx+"px,"+dy+"px)";vx=dx/m*100;vy=-dy/m*100;upd()}
+joy.addEventListener("pointerdown",function(e){if(mode!="MANUAL"){note.textContent="Joystick ignored: not in MANUAL.";return}joy.setPointerCapture(e.pointerId);joy.classList.add("drag");mv(e)});
+joy.addEventListener("pointermove",function(e){if(joy.classList.contains("drag"))mv(e)});
+function rel(){joy.classList.remove("drag");kn.style.transform="";vx=vy=0;upd()}joy.addEventListener("pointerup",rel);joy.addEventListener("pointercancel",rel);
+})();</script></body></html>

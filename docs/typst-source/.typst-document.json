@@ -1,0 +1,10 @@
+{
+  "entry": "main.typ",
+  "metadata": {
+    "author": "Équipe projet ENISOLAR",
+    "subtitle": "Conduite BLE manuelle, télémétrie et arrêt sûr",
+    "title": "ENISOLAR Rover — Plan de démonstration sur cinq jours v1.2"
+  },
+  "mode": "report",
+  "theme": "report-theme.typ"
+}
