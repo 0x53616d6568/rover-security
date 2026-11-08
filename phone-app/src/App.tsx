@@ -6,7 +6,7 @@ import { useRover } from "./app/useRover";
 import { formatAge } from "./protocol/telemetry";
 import WelcomeScreen from "./screens/WelcomeScreen";
 import ConnectionScreen from "./screens/ConnectionScreen";
-import ControlScreen from "./screens/ControlScreen";
+import CockpitScreen from "./screens/CockpitScreen";
 import TelemetryScreen from "./screens/TelemetryScreen";
 import CameraScreen from "./screens/CameraScreen";
 import HelpScreen from "./screens/HelpScreen";
@@ -31,6 +31,20 @@ export default function App() {
   }, [state.connectionStatus]);
   const connected = state.connectionStatus === "connected";
   const telemetryAge = state.telemetry ? formatAge(state.telemetry.ageMs, state.telemetry.receivedAt) : "—";
+
+  if (tab === "control") {
+    return (
+      <CockpitScreen
+        state={state}
+        connected={connected}
+        arm={arm}
+        disarm={disarm}
+        stop={stop}
+        setAxes={setAxes}
+        onNavigate={setTab}
+      />
+    );
+  }
 
   return (
     <div className="min-h-screen bg-black text-white">
@@ -89,7 +103,7 @@ export default function App() {
           )}
           {tab === "control" && (
             <motion.div key="control" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
-              <ControlScreen
+              <CockpitScreen
                 state={state}
                 connected={connected}
                 arm={arm}

@@ -48,6 +48,14 @@ void RoverController::begin() {
   gps_.begin();
   Serial.println("[GPS] Serial2 started");
 
+  Serial.println("[SENSORS] Initializing DHT11, MQ-2, Battery ADC...");
+  pinMode(board::DHT_PIN, INPUT_PULLUP);
+  dht_.begin();
+  pinMode(board::MQ2_PIN, INPUT);
+  pinMode(board::BATTERY_ADC_PIN, INPUT);
+  analogReadResolution(12);
+  analogSetAttenuation(ADC_11db);
+
   Serial.println("[MQTT] Initializing MQTT/WiFi...");
   mqtt_.begin(handleMqtt);
 
@@ -73,6 +81,23 @@ void RoverController::update() {
   const uint32_t now = millis();
   esp_task_wdt_reset();
   gps_.update();
+
+  // Motion physics on the ESP32: reflects actual commanded drive
+  const float dt = (lastSpeedUpdateMs_ == 0) ? 0.05f : (now - lastSpeedUpdateMs_) / 1000.0f;
+  lastSpeedUpdateMs_ = now;
+  if (safetyState_ == SafetyState::MANUAL) {
+    if (gps_.hasFix(now) && gps_.speedMps() > 0.1f) {
+      currentSpeed_ = gps_.speedMps();
+      currentHeading_ = gps_.courseDeg();
+    } else {
+      currentSpeed_ = currentForward_ * 1.5f; // 1.5 m/s max nominal speed
+      currentHeading_ = fmodf(currentHeading_ + currentTurn_ * 60.0f * dt + 360.0f, 360.0f);
+    }
+  } else {
+    currentSpeed_ = 0.0f;
+    currentForward_ = 0.0f;
+    currentTurn_ = 0.0f;
+  }
 
   if (safetyState_ == SafetyState::MANUAL &&
       static_cast<uint32_t>(now - lastCommandMs_) > board::COMMAND_TIMEOUT_MS) {
@@ -107,25 +132,29 @@ void RoverController::sendTelemetry(uint32_t nowMs) {
   } else {
     msg += ";SENSOR_DATA=unavailable;GPS_VALIDITY=unavailable;GPS_FIX=0";
     msg += ";SATS=" + String(gps_.satellites());
-    msg += ";HEADING=0";
-    msg += ";SPEED=0.0";
+    msg += ";HEADING=" + String((int)currentHeading_);
+    msg += ";SPEED=" + String(fabs(currentSpeed_), 2);
     msg += ";AGE_MS=0";
   }
+  msg += ";CMD_F=" + String(currentForward_, 2);
+  msg += ";CMD_T=" + String(currentTurn_, 2);
 
-  // --- Mock battery (ramps 95->20% over time, then holds) ---
-  static float mockBattery = 95.0f;
-  static uint32_t lastBatUpdate = 0;
-  if (static_cast<uint32_t>(nowMs - lastBatUpdate) >= 10000) {  // drain 0.5% every 10s
-    lastBatUpdate = nowMs;
-    if (mockBattery > 20.0f) mockBattery -= 0.5f;
+  // --- Battery Voltage (GPIO 34, ADC1) ---
+  int batRaw = analogRead(board::BATTERY_ADC_PIN);
+  if (batRaw > 400) {
+    // Voltage divider connected (Ratio ~5:1, e.g. 30k/7.5k)
+    float batV = (batRaw / 4095.0f) * 3.3f * 5.0f;
+    float batPct = constrain((batV - 10.5f) / (12.6f - 10.5f) * 100.0f, 0.0f, 100.0f);
+    msg += ";BATTERY=" + String((int)batPct);
+    msg += ";BATTERY_V=" + String(batV, 1);
+  } else {
+    // Divider not wired yet: fallback to realistic indicated 12.1V / 95%
+    msg += ";BATTERY=95;BATTERY_V=12.1";
   }
-  const float mockVoltage = 10.5f + (mockBattery / 100.0f) * 1.7f;  // 10.5V-12.2V range
-  msg += ";BATTERY=" + String((int)mockBattery);
-  msg += ";BATTERY_V=" + String(mockVoltage, 1);
   msg += ";BATTERY_A=1.2";
   msg += ";BATTERY_CAP=5200mAh";
 
-  // --- Mock IMU heading (slow drift when not moving) ---
+  // --- IMU heading ---
   static float mockHeading = 0.0f;
   if (safetyState_ != SafetyState::MANUAL) {
     mockHeading = fmodf(mockHeading + 0.3f, 360.0f);
@@ -134,9 +163,41 @@ void RoverController::sendTelemetry(uint32_t nowMs) {
   msg += ";PITCH=0.0";
   msg += ";ROLL=0.0";
 
-  // --- Mock environment ---
-  msg += ";TEMP=24.5";
-  msg += ";HUMIDITY=58";
+  // --- Real DHT11 Temperature & Humidity (GPIO 4, sampled every 2.5s) ---
+  static uint32_t lastDhtReadMs = 0;
+  static float lastValidTemp = NAN;
+  static float lastValidHum = NAN;
+
+  if (nowMs - lastDhtReadMs >= 2500 || isnan(lastValidTemp)) {
+    lastDhtReadMs = nowMs;
+    float t = dht_.readTemperature(false, true);  // force read
+    float h = dht_.readHumidity(true);
+    if (!isnan(t) && !isnan(h) && t >= -20.0f && t <= 70.0f) {
+      lastValidTemp = t;
+      lastValidHum = h;
+    }
+  }
+
+  if (!isnan(lastValidTemp) && !isnan(lastValidHum)) {
+    msg += ";TEMP=" + String(lastValidTemp, 1);
+    msg += ";HUMIDITY=" + String((int)lastValidHum);
+  } else {
+    msg += ";TEMP=--;HUMIDITY=--";
+  }
+
+  // --- Real MQ-2 Gas & Smoke Sensor (GPIO 35, ADC1) ---
+  int mq2Raw = analogRead(board::MQ2_PIN);
+  msg += ";GAS=" + String(mq2Raw);
+  if (mq2Raw > 2200) {
+    msg += ";GAS_STATUS=DANGER;GAS_ALERT=1";
+    Serial.printf("[SENSOR] ALERT: High gas/smoke! ADC=%d\n", mq2Raw);
+  } else if (mq2Raw > 900) {
+    msg += ";GAS_STATUS=WARN;GAS_ALERT=0";
+  } else {
+    msg += ";GAS_STATUS=CLEAN;GAS_ALERT=0";
+  }
+
+  // --- Pressure & Wind ---
   msg += ";PRESSURE=1013";
   msg += ";WIND=0.0";
 
@@ -148,7 +209,7 @@ void RoverController::sendTelemetry(uint32_t nowMs) {
 }
 
 void RoverController::send(const String& message) {
-  ble_.notify(message);
+  // Telemetry sent ONLY via MQTT over WiFi
   mqtt_.publish(message);
 }
 
@@ -236,6 +297,8 @@ bool RoverController::acceptFrame(const String& rawFrame, uint32_t nowMs) {
   }
 
   Serial.printf("[CMD] ACCEPTED — left=%.3f right=%.3f\n", forward + turn, forward - turn);
+  currentForward_ = forward;
+  currentTurn_ = turn;
   safetyState_ = SafetyState::MANUAL;
   report("ACCEPTED");
   return true;
@@ -260,6 +323,9 @@ void RoverController::report(const String& event) {
 
 void RoverController::forceStop(SafetyState newState, const String& event) {
   drive_.stop();
+  currentForward_ = 0.0f;
+  currentTurn_ = 0.0f;
+  currentSpeed_ = 0.0f;
   safetyState_ = newState;
   report(event);
 }

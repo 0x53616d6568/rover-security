@@ -1,0 +1,1548 @@
+<!doctype html>
+<html>
+
+<head>
+  <meta charset=utf8>
+  <meta name=viewport content="width=device-width,initial-scale=1,viewport-fit=cover">
+  <style>
+    :root {
+      color-scheme: light;
+      box-sizing: border-box;
+      padding-top: env(safe-area-inset-top, 0px);
+      padding-bottom: env(safe-area-inset-bottom, 0px)
+    }
+
+    html {
+      scroll-padding-top: env(safe-area-inset-top, 0px)
+    }
+
+    body {
+      margin: 0;
+      padding: 0;
+      font: 14px -apple-system, BlinkMacSystemFont, sans-serif;
+      background: #fff;
+      color: #000
+    }
+
+    img {
+      max-width: 100%
+    }
+
+    [hidden]:not([hidden=until-found i]) {
+      display: none !important
+    }
+  </style>
+</head>
+
+<body>
+  <title>Rover Cockpit</title>
+  <meta name="claude:viewport-fit-sides" content="cover">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link
+    href="https://fonts.googleapis.com/css2?family=Barlow+Semi+Condensed:wght@400;500;600;700&family=JetBrains+Mono:wght@500;600&display=swap"
+    rel="stylesheet">
+  <style>
+    /* Layout: a full-bleed 3D stage with command panels on both sides, telemetry in the top corners and a camera on top. Stacks to one column on narrow screens. */
+    :root {
+      --bg: #070B10;
+      --panel: rgba(9, 14, 20, .78);
+      --line: rgba(160, 190, 210, .20);
+      --fg: #E8EEF2;
+      --mut: #9DADB9;
+      --go: #3DDC97;
+      --go-ink: #06130C;
+      --warn: #F5B73B;
+      --stop: #E5484D;
+      --ui: 'Barlow Semi Condensed', system-ui, -apple-system, 'Segoe UI', sans-serif;
+      --mono: 'JetBrains Mono', ui-monospace, Menlo, Consolas, monospace;
+      color-scheme: dark;
+    }
+
+    html,
+    body {
+      height: 100%
+    }
+
+    body {
+      margin: 0;
+      background: var(--bg);
+      color: var(--fg);
+      font-family: var(--ui);
+      font-size: 15px;
+      overflow-x: hidden
+    }
+
+    * {
+      box-sizing: border-box
+    }
+
+    button,
+    input {
+      font-family: inherit
+    }
+
+    .cockpit {
+      position: relative;
+      min-height: 100%;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+      padding-block: 14px;
+      padding-left: max(16px, env(safe-area-inset-left, 0px));
+      padding-right: max(16px, env(safe-area-inset-right, 0px))
+    }
+
+    .stage {
+      position: relative;
+      height: 58vh;
+      min-height: 340px;
+      border-radius: 14px;
+      overflow: hidden;
+      background: #0a1620;
+      order: 1;
+      touch-action: pan-y
+    }
+
+    .stage.orbit {
+      touch-action: none
+    }
+
+    #scene {
+      position: absolute;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+      display: block
+    }
+
+    #loading {
+      position: absolute;
+      inset: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: var(--mut);
+      font-size: 14px;
+      letter-spacing: .06em;
+      text-transform: uppercase;
+      pointer-events: none
+    }
+
+    .panel {
+      background: var(--panel);
+      border: 1px solid var(--line);
+      border-radius: 14px;
+      padding: 14px;
+      backdrop-filter: blur(8px);
+      min-width: 0
+    }
+
+    .lbl {
+      font-size: 12px;
+      letter-spacing: .09em;
+      text-transform: uppercase;
+      color: var(--mut);
+      font-weight: 600
+    }
+
+    .val {
+      font-family: var(--mono);
+      font-size: 20px;
+      font-weight: 600;
+      font-variant-numeric: tabular-nums;
+      white-space: nowrap
+    }
+
+    .unit {
+      font-size: 12px;
+      color: var(--mut);
+      font-weight: 500;
+      font-family: var(--ui)
+    }
+
+    .row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 8px
+    }
+
+    .grid2 {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 12px 8px
+    }
+
+    .col {
+      display: flex;
+      flex-direction: column;
+      gap: 12px
+    }
+
+    .spacer {
+      flex: 1
+    }
+
+    .chip {
+      font-size: 12px;
+      font-weight: 700;
+      border-radius: 999px;
+      padding: 3px 10px;
+      letter-spacing: .04em
+    }
+
+    .chip.off {
+      background: rgba(157, 173, 185, .18);
+      color: var(--fg)
+    }
+
+    .chip.on {
+      background: var(--go);
+      color: var(--go-ink)
+    }
+
+    .bar {
+      height: 8px;
+      border-radius: 999px;
+      background: rgba(255, 255, 255, .12);
+      overflow: hidden
+    }
+
+    .bar>i {
+      display: block;
+      height: 100%;
+      background: var(--go)
+    }
+
+    button {
+      cursor: pointer
+    }
+
+    button:focus-visible,
+    input:focus-visible {
+      outline: 2px solid var(--go);
+      outline-offset: 2px
+    }
+
+    .btn {
+      height: 44px;
+      border-radius: 12px;
+      border: 1px solid rgba(160, 190, 210, .4);
+      background: transparent;
+      color: var(--fg);
+      font-size: 15px;
+      font-weight: 600
+    }
+
+    .btn.primary {
+      background: var(--go);
+      color: var(--go-ink);
+      border-color: var(--go);
+      font-weight: 700;
+      height: 48px;
+      font-size: 16px
+    }
+
+    .btn.primary[disabled] {
+      opacity: .55;
+      cursor: default
+    }
+
+    .btn.stop {
+      height: 76px;
+      background: var(--stop);
+      border-color: var(--stop);
+      color: #fff;
+      font-size: 18px;
+      font-weight: 700;
+      letter-spacing: .04em;
+      box-shadow: 0 0 0 4px rgba(229, 72, 77, .25)
+    }
+
+    .btn.stop small {
+      display: block;
+      font-size: 12px;
+      font-weight: 500;
+      opacity: .9;
+      letter-spacing: 0
+    }
+
+    .seg {
+      display: grid;
+      grid-auto-flow: column;
+      grid-auto-columns: 1fr;
+      gap: 4px;
+      padding: 4px;
+      border-radius: 12px;
+      border: 1px solid var(--line);
+      background: var(--panel);
+      backdrop-filter: blur(8px)
+    }
+
+    .seg button {
+      height: 40px;
+      border: 0;
+      border-radius: 9px;
+      background: transparent;
+      color: #C7D2DA;
+      font-size: 14px;
+      font-weight: 600
+    }
+
+    .seg button[aria-pressed="true"] {
+      background: rgba(61, 220, 151, .18);
+      color: var(--go);
+      font-weight: 700
+    }
+
+    .topbar {
+      order: 0;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      flex-wrap: wrap;
+      position: relative;
+      z-index: 2
+    }
+
+    .brand {
+      font-size: 18px;
+      font-weight: 700;
+      letter-spacing: .06em
+    }
+
+    .sub {
+      font-size: 14px;
+      color: var(--mut);
+      margin-left: 10px
+    }
+
+    .demo {
+      font-size: 12px;
+      color: var(--warn);
+      border: 1px solid rgba(245, 183, 59, .5);
+      border-radius: 999px;
+      padding: 5px 12px;
+      font-weight: 600
+    }
+
+    /* camera */
+    .cam {
+      order: 2;
+      width: 100%;
+      max-width: 860px;
+      margin-inline: auto;
+      display: flex;
+      flex-direction: column;
+      gap: 3px;
+      padding: 0 6px;
+      background: none;
+      border: none;
+      backdrop-filter: none;
+    }
+
+    .camwrap {
+      position: relative;
+      border-radius: 16px;
+      overflow: hidden;
+      background: #0a1317;
+      aspect-ratio: 21 / 9;
+      max-height: 230px;
+      -webkit-mask-image: linear-gradient(90deg, transparent 0%, #000 5%, #000 95%, transparent 100%),
+                          linear-gradient(180deg, transparent 0%, #000 7%, #000 93%, transparent 100%);
+      mask-image: linear-gradient(90deg, transparent 0%, #000 5%, #000 95%, transparent 100%),
+                  linear-gradient(180deg, transparent 0%, #000 7%, #000 93%, transparent 100%);
+      -webkit-mask-composite: source-in;
+      mask-composite: intersect;
+    }
+
+    #camcv {
+      position: absolute;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+      display: block
+    }
+
+    .camwrap::after {
+      content: "";
+      position: absolute;
+      inset: 0;
+      background: repeating-linear-gradient(0deg, rgba(255, 255, 255, .03) 0 1px, transparent 1px 4px);
+      pointer-events: none
+    }
+
+    .cross {
+      position: absolute;
+      left: 50%;
+      top: 50%;
+      width: 40px;
+      height: 40px;
+      margin: -20px 0 0 -20px;
+      border: 1.5px solid rgba(61, 220, 151, .8);
+      border-radius: 50%;
+      z-index: 1;
+      pointer-events: none
+    }
+
+    .camtag {
+      position: absolute;
+      left: 10px;
+      bottom: 8px;
+      z-index: 1;
+      font-family: var(--mono);
+      font-size: 11px;
+      color: #C7D2DA;
+      text-shadow: 0 1px 2px #000
+    }
+
+    .cl,
+    .cr {
+      display: flex;
+      flex-direction: column;
+      gap: 14px
+    }
+
+    .tl {
+      order: 3
+    }
+
+    .tr {
+      order: 4
+    }
+
+    .cl {
+      order: 5
+    }
+
+    .cr {
+      order: 6
+    }
+
+    .views {
+      order: 7
+    }
+
+    .panel.p {
+      width: 100%;
+      max-width: 720px;
+      margin-inline: auto
+    }
+
+    /* joystick */
+    .joywrap {
+      display: flex;
+      justify-content: center
+    }
+
+    #joy {
+      position: relative;
+      width: 156px;
+      height: 156px;
+      border-radius: 50%;
+      border: 1.5px solid rgba(160, 190, 210, .38);
+      background: radial-gradient(circle, rgba(61, 220, 151, .12) 0, rgba(61, 220, 151, 0) 70%);
+      touch-action: none;
+      user-select: none;
+      -webkit-user-select: none
+    }
+
+    #joy::before,
+    #joy::after {
+      content: "";
+      position: absolute;
+      background: rgba(160, 190, 210, .25)
+    }
+
+    #joy::before {
+      left: 50%;
+      top: 10px;
+      bottom: 10px;
+      width: 1px
+    }
+
+    #joy::after {
+      top: 50%;
+      left: 10px;
+      right: 10px;
+      height: 1px
+    }
+
+    #knob {
+      position: absolute;
+      left: 50%;
+      top: 50%;
+      width: 56px;
+      height: 56px;
+      margin: -28px 0 0 -28px;
+      border-radius: 50%;
+      background: var(--go);
+      box-shadow: 0 0 24px rgba(61, 220, 151, .5);
+      z-index: 1
+    }
+
+    #joy.dim #knob {
+      background: #53606a;
+      box-shadow: none
+    }
+
+    .keys {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 6px;
+      font-size: 13px;
+      color: var(--mut);
+      text-align: center;
+      font-family: var(--mono)
+    }
+
+    .keys span {
+      border: 1px solid rgba(160, 190, 210, .3);
+      border-radius: 8px;
+      padding: 7px 0
+    }
+
+    input[type=range] {
+      width: 100%;
+      accent-color: var(--go);
+      height: 28px;
+      margin: 0
+    }
+
+    output {
+      font-family: var(--mono);
+      font-weight: 600;
+      font-size: 15px
+    }
+
+    .note {
+      font-size: 13px;
+      color: var(--mut);
+      line-height: 1.5
+    }
+
+    .views {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      align-items: center
+    }
+
+    .views .seg {
+      width: min(100%, 520px)
+    }
+
+    .frames {
+      font-family: var(--mono);
+      font-size: 11px;
+      line-height: 1.5;
+      color: var(--mut);
+      background: var(--panel);
+      border: 1px solid var(--line);
+      border-radius: 10px;
+      padding: 8px 10px;
+      width: min(100%, 640px);
+      overflow-x: auto;
+      white-space: nowrap;
+      backdrop-filter: blur(8px)
+    }
+
+    .frames b {
+      color: var(--go);
+      font-weight: 600
+    }
+
+    @media (min-width:1100px) {
+      .cockpit {
+        height: 100%;
+        min-height: 860px;
+        display: grid;
+        grid-template-columns: 272px minmax(0, 1fr) 272px;
+        grid-template-rows: auto auto minmax(0, 1fr) auto;
+        grid-template-areas: "top top top" "tl cam tr" "cl . cr" "cl views cr";
+        pointer-events: none
+      }
+
+      .cockpit>* {
+        pointer-events: auto
+      }
+
+      .stage {
+        position: absolute;
+        inset: 0;
+        height: auto;
+        min-height: 0;
+        border-radius: 0;
+        z-index: 0;
+        order: 0
+      }
+
+      .topbar {
+        grid-area: top
+      }
+
+      .cam {
+        grid-area: cam;
+        justify-self: stretch;
+        align-self: start;
+        width: 100%;
+        max-width: none;
+        margin-top: -8px;
+        padding-inline: 12px;
+      }
+
+      .tl {
+        grid-area: tl;
+        align-self: start
+      }
+
+      .tr {
+        grid-area: tr;
+        align-self: start
+      }
+
+      .cl {
+        grid-area: cl
+      }
+
+      .cr {
+        grid-area: cr
+      }
+
+      .views {
+        grid-area: views;
+        align-self: end
+      }
+
+      .panel.p {
+        max-width: none;
+        margin: 0
+      }
+    }
+
+    .armrow {
+      display: flex;
+      flex-direction: column;
+      gap: 14px
+    }
+
+    .demo-mini {
+      display: none;
+      color: var(--warn);
+      margin-left: 6px;
+      font-weight: 700
+    }
+
+    /* Phone held sideways (panoramic): the 3D map fills the screen and everything on top is a light, mostly
+   transparent HUD, so the rover and its surroundings stay visible. */
+    @media (orientation:landscape) and (max-height:520px) {
+
+      html,
+      body {
+        overflow: hidden
+      }
+
+      .cockpit {
+        height: 100%;
+        min-height: 0;
+        gap: 4px;
+        padding-block: 6px;
+        display: grid;
+        padding-left: max(12px, env(safe-area-inset-left, 0px));
+        padding-right: max(12px, env(safe-area-inset-right, 0px));
+        grid-template-columns: auto minmax(0, 1fr) auto;
+        grid-template-rows: auto minmax(0, 1fr) auto;
+        grid-template-areas: "tl cam tr" "cl . cr" "cl views cr"
+      }
+
+      /* only real controls catch touches; everywhere else you can still drag the map */
+      .cockpit>* {
+        pointer-events: none;
+        position: relative;
+        z-index: 1
+      }
+
+      .cockpit>.stage {
+        pointer-events: auto;
+        position: absolute;
+        z-index: 0;
+        inset: 0;
+        height: auto;
+        min-height: 0;
+        border-radius: 0;
+        order: 0
+      }
+
+      .cockpit button,
+      .cockpit input,
+      .cockpit #joy {
+        pointer-events: auto
+      }
+
+      .hide-c {
+        display: none !important
+      }
+
+      .demo-mini {
+        display: inline
+      }
+
+      /* no glass panels: text floats on the scene */
+      .panel,
+      .cam {
+        background: none;
+        border: 0;
+        border-radius: 0;
+        backdrop-filter: none;
+        padding: 0;
+        text-shadow: 0 1px 3px rgba(0, 0, 0, .85), 0 0 8px rgba(0, 0, 0, .45)
+      }
+
+      .panel.p {
+        width: auto;
+        max-width: none;
+        margin: 0
+      }
+
+      .val {
+        font-size: 14px
+      }
+
+      .lbl {
+        font-size: 10px;
+        letter-spacing: .07em
+      }
+
+      .chip {
+        font-size: 10px;
+        padding: 2px 8px
+      }
+
+      /* telemetry, top corners */
+      .tl {
+        grid-area: tl;
+        align-self: start;
+        justify-self: start
+      }
+
+      .tl .col {
+        gap: 3px
+      }
+
+      .tl .row {
+        gap: 8px
+      }
+
+      .tl .bar {
+        height: 3px;
+        margin-top: 3px !important
+      }
+
+      .tr {
+        grid-area: tr;
+        align-self: start;
+        justify-self: end;
+        text-align: right
+      }
+
+      .tr .col {
+        gap: 3px;
+        align-items: flex-end
+      }
+
+      .tr .row {
+        gap: 8px
+      }
+
+      .tr .row>span {
+        font-size: 11px !important
+      }
+
+      .tr .grid2 {
+        display: flex;
+        gap: 12px
+      }
+
+      /* camera: edges fade out to transparent */
+      .cam {
+        grid-area: cam;
+        justify-self: center;
+        align-self: start;
+        width: min(220px, 100%);
+        max-width: none;
+        margin: 0;
+        gap: 0
+      }
+
+      .camwrap {
+        border-radius: 0;
+        background: transparent;
+        -webkit-mask-image: linear-gradient(90deg, transparent 0, #000 24%, #000 76%, transparent 100%), linear-gradient(180deg, transparent 0, #000 30%, #000 70%, transparent 100%);
+        mask-image: linear-gradient(90deg, transparent 0, #000 24%, #000 76%, transparent 100%), linear-gradient(180deg, transparent 0, #000 30%, #000 70%, transparent 100%);
+        -webkit-mask-composite: source-in;
+        mask-composite: intersect
+      }
+
+      .camwrap::after {
+        opacity: .5
+      }
+
+      .cross {
+        width: 26px;
+        height: 26px;
+        margin: -13px 0 0 -13px;
+        border-width: 1px
+      }
+
+      /* limits, bottom left */
+      .cl {
+        grid-area: cl;
+        align-self: end;
+        justify-self: start;
+        width: 170px;
+        gap: 5px
+      }
+
+      .cl .row {
+        gap: 6px
+      }
+
+      .cl label {
+        font-size: 11px
+      }
+
+      output {
+        font-size: 12px
+      }
+
+      input[type=range] {
+        height: 18px
+      }
+
+      .seg {
+        padding: 2px;
+        border-radius: 10px;
+        background: rgba(9, 14, 20, .38);
+        border-color: rgba(160, 190, 210, .14);
+        backdrop-filter: none
+      }
+
+      .seg button {
+        height: 28px;
+        font-size: 12px;
+        border-radius: 8px
+      }
+
+      /* drive, bottom right: buttons stacked beside the stick so the stick keeps the height free */
+      .cr {
+        grid-area: cr;
+        align-self: end;
+        justify-self: end;
+        flex-direction: row;
+        align-items: flex-end;
+        gap: 10px
+      }
+
+      .cr .armrow {
+        order: -1;
+        flex-direction: column;
+        gap: 6px;
+        width: 104px
+      }
+
+      .armrow .btn {
+        width: 100%;
+        min-width: 0;
+        padding: 0 6px;
+        border-radius: 10px;
+        font-size: 12px;
+        letter-spacing: 0
+      }
+
+      .armrow .btn.primary {
+        height: 36px;
+        background: rgba(61, 220, 151, .9)
+      }
+
+      .armrow .btn.primary[disabled] {
+        opacity: .5
+      }
+
+      .armrow .btn.stop {
+        height: 42px;
+        font-size: 13px;
+        box-shadow: none;
+        background: rgba(229, 72, 77, .92)
+      }
+
+      .btn.stop .full,
+      .btn.stop small {
+        display: none
+      }
+
+      /* joystick: no visible border, ring only appears while touched */
+      #joy {
+        width: 116px;
+        height: 116px;
+        border-color: transparent;
+        background: radial-gradient(circle, rgba(61, 220, 151, .10) 0, rgba(61, 220, 151, 0) 70%)
+      }
+
+      #joy::before {
+        top: 14px;
+        bottom: 14px;
+        background: rgba(160, 190, 210, .16)
+      }
+
+      #joy::after {
+        left: 14px;
+        right: 14px;
+        background: rgba(160, 190, 210, .16)
+      }
+
+      #joy:active {
+        border-color: rgba(160, 190, 210, .3)
+      }
+
+      #knob {
+        width: 46px;
+        height: 46px;
+        margin: -23px 0 0 -23px;
+        opacity: .78;
+        box-shadow: 0 0 18px rgba(61, 220, 151, .4)
+      }
+
+      #joy.dim #knob {
+        background: rgba(120, 135, 146, .7)
+      }
+
+      /* view switcher, bottom centre */
+      .views {
+        grid-area: views;
+        align-self: end;
+        justify-self: center;
+        gap: 0
+      }
+
+      .views .seg {
+        width: min(100%, 300px)
+      }
+    }
+
+    @media (prefers-reduced-motion:reduce) {
+      * {
+        scroll-behavior: auto !important
+      }
+    }
+  </style>
+
+  <main class="cockpit" id="cockpit">
+    <header class="topbar hide-c">
+      <div style="display:flex;align-items:center;gap:10px">
+        <button type="button" id="exitCockpit"
+          style="background:rgba(255,255,255,0.08);border:1px solid rgba(255,255,255,0.18);color:#E8EEF2;padding:5px 12px;border-radius:9px;font-size:12px;font-weight:600;display:flex;align-items:center;gap:5px;cursor:pointer;">
+          &larr; Menu
+        </button>
+        <span class="brand">ROVERX</span><span class="sub">ENISOLAR-ROVER &middot; manual control</span>
+      </div>
+      <div style="display:flex;align-items:center;gap:8px">
+        <button type="button" id="toggleClassic"
+          style="background:rgba(255,255,255,0.08);border:1px solid rgba(255,255,255,0.18);color:var(--mut);padding:5px 12px;border-radius:9px;font-size:12px;font-weight:600;cursor:pointer;">
+          Classic Grid
+        </button>
+        <div class="demo" id="bleStatus">MQTT &middot; disconnected</div>
+      </div>
+    </header>
+
+    <section class="stage orbit" id="stage" aria-label="3D view of the rover">
+      <canvas id="scene"></canvas>
+      <div id="loading">Loading rover model&hellip;</div>
+    </section>
+
+    <section class="panel cam" aria-label="Camera">
+      <div class="row hide-c">
+        <div class="lbl">Mast camera</div>
+        <div class="lbl" style="color:var(--mut)">virtual view</div>
+      </div>
+      <div class="camwrap"><canvas id="camcv"></canvas>
+        <div class="cross"></div>
+        <div class="camtag hide-c">ESP32-CAM feed not configured</div>
+      </div>
+    </section>
+
+    <section class="panel p tl" aria-label="Rover status">
+      <div class="col">
+        <div class="row">
+          <div class="lbl">Rover</div><span class="chip off" id="stateChip">DISARMED</span>
+        </div>
+        <div>
+          <div class="row">
+            <div class="lbl">Battery</div>
+            <div class="val"><span id="batVal">&mdash;</span><span class="unit"> %</span></div>
+          </div>
+          <div class="bar" style="margin-top:6px"><i id="batBar" style="width:0%"></i></div>
+        </div>
+        <div class="grid2 hide-c">
+          <div>
+            <div class="lbl">Voltage</div>
+            <div class="val"><span id="voltVal">&mdash;</span> <span class="unit">V</span></div>
+          </div>
+          <div>
+            <div class="lbl">Link</div>
+            <div class="val" id="linkVal">No Link</div>
+          </div>
+          <div>
+            <div class="lbl">RSSI</div>
+            <div class="val"><span id="rssi">&mdash;</span> <span class="unit">dBm</span></div>
+          </div>
+          <div>
+            <div class="lbl">Telem. age</div>
+            <div class="val"><span id="tage">&mdash;</span> <span class="unit">ms</span></div>
+          </div>
+        </div>
+        <div class="row hide-c" style="border-top:1px solid var(--line);padding-top:10px;margin-top:2px">
+          <div>
+            <div class="lbl">Climate</div>
+            <div class="val" style="font-size:15px"><span id="tempVal">&mdash;</span><span class="unit">&deg;C</span> / <span id="humVal">&mdash;</span><span class="unit">%</span></div>
+          </div>
+          <div style="text-align:right">
+            <div class="lbl">Gas (MQ-2)</div>
+            <div class="val" style="font-size:14px;display:flex;align-items:center;justify-content:flex-end;gap:5px"><span id="gasVal">&mdash;</span><span class="chip off" id="gasChip" style="font-size:10px;padding:2px 7px">CLEAN</span></div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="panel p tr" aria-label="GPS">
+      <div class="col">
+        <div class="row">
+          <div class="lbl">GPS<span class="hide-c"> &middot; NEO-6M</span></div><span id="gpsFix"
+            style="color:var(--mut);font-size:13px;font-weight:700">NO FIX</span>
+        </div>
+        <div class="col hide-c" style="gap:2px">
+          <div class="val" id="lat">&mdash;</div>
+          <div class="val" id="lng">&mdash;</div>
+        </div>
+        <div class="grid2">
+          <div>
+            <div class="lbl">Speed</div>
+            <div class="val"><span id="spd">&mdash;</span> <span class="unit">m/s</span></div>
+          </div>
+          <div>
+            <div class="lbl">Heading</div>
+            <div class="val"><span id="hdg">&mdash;</span><span class="unit">&deg;</span></div>
+          </div>
+          <div class="hide-c">
+            <div class="lbl">Satellites</div>
+            <div class="val" id="sats">0</div>
+          </div>
+          <div class="hide-c">
+            <div class="lbl">Fix age</div>
+            <div class="val"><span id="fage">&mdash;</span> <span class="unit">ms</span></div>
+          </div>
+        </div>
+        <div class="row hide-c" style="border-top:1px solid var(--line);padding-top:10px">
+          <div class="lbl" style="color:var(--warn)">Waypoint 1</div>
+          <div class="val" style="font-size:15px" id="wp">&mdash; m</div>
+        </div>
+      </div>
+    </section>
+
+    <aside class="panel p cl" aria-label="Limits">
+      <div class="lbl hide-c">Limits</div>
+      <div>
+        <div class="row"><label for="lim" style="color:#C7D2DA">Speed limit</label><output id="limv"
+            for="lim">60%</output></div>
+        <input type="range" id="lim" min="10" max="100" step="5" value="60">
+      </div>
+      <div class="hide-c">
+        <div class="row"><label for="gain" style="color:#C7D2DA">Steering gain</label><output id="gainv"
+            for="gain">80%</output></div>
+        <input type="range" id="gain" min="20" max="100" step="5" value="80">
+      </div>
+      <div>
+        <div class="lbl hide-c" style="margin-bottom:8px">Drive profile</div>
+        <div class="seg" id="profile" role="group" aria-label="Drive profile">
+          <button type="button" data-lim="30" aria-pressed="false">Crawl</button>
+          <button type="button" data-lim="60" aria-pressed="true">Normal</button>
+          <button type="button" data-lim="100" aria-pressed="false">Sport</button>
+        </div>
+      </div>
+      <p class="note hide-c">The rover stops by itself if no command arrives for 0.5 s, or if the link drops.</p>
+    </aside>
+
+    <aside class="panel p cr" aria-label="Drive controls">
+      <div class="lbl hide-c">Drive</div>
+      <div class="joywrap">
+        <div id="joy" class="dim" role="group" aria-label="Drive joystick. Keyboard: Z Q S D or arrow keys.">
+          <div id="knob"></div>
+        </div>
+      </div>
+      <div class="grid2 hide-c">
+        <div>
+          <div class="lbl">Throttle</div>
+          <div class="val" id="thr">+0.00</div>
+        </div>
+        <div>
+          <div class="lbl">Steering</div>
+          <div class="val" id="str">+0.00</div>
+        </div>
+      </div>
+      <div class="spacer hide-c"></div>
+      <div class="note hide-c" style="font-family:var(--mono);font-size:12px">Keys: Z Q S D or arrows &middot; Space =
+        stop</div>
+      <div class="armrow"><button type="button" class="btn primary" id="arm">ARM &rarr; MANUAL</button>
+        <button type="button" class="btn stop" id="estop"><span class="full">EMERGENCY </span>STOP<small>or press
+            Space</small></button>
+      </div>
+      <button type="button" class="btn hide-c" id="disarm">Disarm</button>
+    </aside>
+
+    <div class="views">
+      <div class="seg" id="viewseg" role="group" aria-label="Camera view">
+        <button type="button" data-mode="chase" aria-pressed="false">Chase</button>
+        <button type="button" data-mode="orbit" aria-pressed="true">Orbit</button>
+        <button type="button" data-mode="top" aria-pressed="false">Top</button>
+        <button type="button" id="flip" aria-pressed="false">Flip front</button>
+      </div>
+      <div class="frames hide-c" aria-label="Frame preview">
+        <div><b>RX</b> <span id="rx">WAITING FOR BLE LINK...</span></div>
+        <div><b>TX</b> <span id="tx">&mdash;</span></div>
+      </div>
+    </div>
+  </main>
+
+
+  <script
+    type="importmap">{"imports":{"three":"https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js","three/addons/":"https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/"}}</script>
+  <script type="module">
+    import * as THREE from 'three';
+    import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
+    import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+    import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js';
+
+    const $ = id => document.getElementById(id);
+    const stage = $('stage'), cv = $('scene'), camcv = $('camcv');
+    const wideMQ = matchMedia('(min-width:1100px)');
+    const compactMQ = matchMedia('(orientation:landscape) and (max-height:520px)');
+
+    /* ---------- renderers ---------- */
+    const renderer = new THREE.WebGLRenderer({ canvas: cv, antialias: true });
+    renderer.setPixelRatio(Math.min(devicePixelRatio, 2));
+    renderer.shadowMap.enabled = true;
+    renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+    renderer.toneMapping = THREE.ACESFilmicToneMapping;
+    renderer.toneMappingExposure = 1.15;
+    const camRenderer = new THREE.WebGLRenderer({ canvas: camcv, antialias: true });
+    camRenderer.setPixelRatio(Math.min(devicePixelRatio, 1.5));
+    camRenderer.toneMapping = THREE.ACESFilmicToneMapping;
+    camRenderer.toneMappingExposure = 1.15;
+
+    /* ---------- scene ---------- */
+    const scene = new THREE.Scene();
+    const sc = document.createElement('canvas'); sc.width = 2; sc.height = 256;
+    const sg = sc.getContext('2d'), grad = sg.createLinearGradient(0, 0, 0, 256);
+    grad.addColorStop(0, '#07101A'); grad.addColorStop(.6, '#143246'); grad.addColorStop(1, '#1d4a57');
+    sg.fillStyle = grad; sg.fillRect(0, 0, 2, 256);
+    const skyTex = new THREE.CanvasTexture(sc); skyTex.colorSpace = THREE.SRGBColorSpace;
+    scene.background = skyTex;
+    scene.fog = new THREE.Fog(0x1a424e, 16, 70);
+    const pmrem = new THREE.PMREMGenerator(renderer);
+    const envTex = pmrem.fromScene(new RoomEnvironment(), 0.04).texture;
+    scene.environment = envTex;
+
+    scene.add(new THREE.HemisphereLight(0xbfe3ff, 0x0b1f24, 0.9));
+    const sun = new THREE.DirectionalLight(0xffffff, 2.4);
+    sun.position.set(4, 9, 5); sun.castShadow = true;
+    sun.shadow.mapSize.set(1024, 1024);
+    Object.assign(sun.shadow.camera, { left: -4, right: 4, top: 4, bottom: -4, near: 1, far: 30 });
+    sun.shadow.bias = -0.0004;
+    scene.add(sun, sun.target);
+
+    const ground = new THREE.Mesh(new THREE.PlaneGeometry(600, 600), new THREE.MeshStandardMaterial({ color: 0x0b1f24, roughness: 1, metalness: 0 }));
+    ground.rotation.x = -Math.PI / 2; ground.receiveShadow = true; scene.add(ground);
+    function addGrid(size, div, op) {
+      const g = new THREE.GridHelper(size, div, 0x3ddc97, 0x3ddc97);
+      g.material.transparent = true; g.material.opacity = op; g.position.y = 0.005; g.material.fog = true; scene.add(g);
+    }
+    addGrid(240, 240, 0.12); addGrid(240, 48, 0.26);
+
+    /* range rings follow the rover (not its heading) */
+    const rig = new THREE.Group(); scene.add(rig);
+    [3, 6, 10].forEach(r => {
+      const m = new THREE.Mesh(new THREE.RingGeometry(r - 0.025, r + 0.025, 128), new THREE.MeshBasicMaterial({ color: 0x3ddc97, transparent: true, opacity: 0.4, side: THREE.DoubleSide }));
+      m.rotation.x = -Math.PI / 2; m.position.y = 0.01; rig.add(m);
+    });
+
+    /* waypoint */
+    const WP = new THREE.Vector3(9, 0, -7);
+    const wpG = new THREE.Group(); wpG.position.copy(WP); scene.add(wpG);
+    const amber = new THREE.MeshBasicMaterial({ color: 0xF5B73B });
+    const wpRing = new THREE.Mesh(new THREE.TorusGeometry(0.55, 0.035, 12, 48), amber); wpRing.rotation.x = Math.PI / 2; wpRing.position.y = 0.05;
+    const wpBeam = new THREE.Mesh(new THREE.CylinderGeometry(0.02, 0.02, 2.6, 8), amber); wpBeam.position.y = 1.3;
+    const wpTip = new THREE.Mesh(new THREE.ConeGeometry(0.16, 0.34, 4), amber); wpTip.position.y = 2.75; wpTip.rotation.x = Math.PI;
+    wpG.add(wpRing, wpBeam, wpTip);
+
+    /* trail */
+    const TRAIL_MAX = 800, trailPos = new Float32Array(TRAIL_MAX * 3);
+    const trailGeo = new THREE.BufferGeometry(); trailGeo.setAttribute('position', new THREE.BufferAttribute(trailPos, 3)); trailGeo.setDrawRange(0, 0);
+    const trail = new THREE.Line(trailGeo, new THREE.LineBasicMaterial({ color: 0x3ddc97 })); trail.frustumCulled = false; scene.add(trail);
+    let trailN = 0, lastTx = 0, lastTz = 0;
+
+    /* ---------- rover ---------- */
+    const rover = new THREE.Group(); scene.add(rover);
+    const pivot = new THREE.Group(); rover.add(pivot);
+    let frontPlusX = false; /* the grille and lights end of the model is its -x end */
+    try { frontPlusX = localStorage.getItem('rover-front') === 'plusx'; } catch (e) { }
+    const fpCam = new THREE.PerspectiveCamera(72, 16 / 9, 0.05, 200);
+    fpCam.rotation.order = 'YXZ'; fpCam.rotation.x = -0.16;
+    pivot.add(fpCam);
+    function applyFront() {
+      pivot.rotation.y = frontPlusX ? Math.PI / 2 : -Math.PI / 2;
+      fpCam.rotation.y = frontPlusX ? -Math.PI / 2 : Math.PI / 2;
+      fpCam.position.set(frontPlusX ? 0.44 : 0.3, 0.98, 0);
+      $('flip').setAttribute('aria-pressed', String(frontPlusX));
+    }
+    applyFront();
+
+    new GLTFLoader().load('./rover.glb', gltf => {
+      gltf.scene.traverse(o => { if (o.isMesh) { o.castShadow = true; if (o.material) o.material.envMapIntensity = 0.8; } });
+      pivot.add(gltf.scene);
+      const l = $('loading'); if (l) l.remove();
+    }, undefined, err => {
+      const l = $('loading'); if (l) l.textContent = 'Could not load the rover model.';
+      console.error('Failed to load rover.glb:', err);
+    });
+
+    /* ---------- main camera ---------- */
+    const cam = new THREE.PerspectiveCamera(42, 1, 0.05, 300);
+    cam.position.set(3.2, 2.2, 3.4);
+    const controls = new OrbitControls(cam, cv);
+    controls.enableDamping = true; controls.enablePan = false; controls.minDistance = 1.3; controls.maxDistance = 26; controls.maxPolarAngle = Math.PI / 2 - 0.03;
+    controls.target.set(0, 0.45, 0);
+    let mode = 'orbit';
+    function setMode(m) {
+      mode = m;
+      stage.classList.toggle('orbit', m === 'orbit');
+      controls.enabled = m === 'orbit';
+      if (m !== 'top') cam.up.set(0, 1, 0);
+      if (m === 'orbit') { controls.target.copy(rover.position).add(new THREE.Vector3(0, 0.45, 0)); }
+      document.querySelectorAll('#viewseg [data-mode]').forEach(b => b.setAttribute('aria-pressed', String(b.dataset.mode === m)));
+    }
+    document.querySelectorAll('#viewseg [data-mode]').forEach(b => b.addEventListener('click', () => setMode(b.dataset.mode)));
+    $('flip').addEventListener('click', () => { frontPlusX = !frontPlusX; applyFront(); try { localStorage.setItem('rover-front', frontPlusX ? 'plusx' : 'minusx'); } catch (e) { } });
+
+    /* ---------- sizing ---------- */
+    function resize() {
+      const w = stage.clientWidth, h = stage.clientHeight;
+      if (!w || !h) return;
+      renderer.setSize(w, h, false);
+      cam.aspect = w / h;
+      if (compactMQ.matches) cam.setViewOffset(w, h, 0, -Math.round(h * 0.06), w, h); else if (wideMQ.matches) cam.setViewOffset(w, h, 0, -Math.round(h * 0.05), w, h); else cam.clearViewOffset();
+      cam.updateProjectionMatrix();
+      const cw = camcv.clientWidth, ch = camcv.clientHeight;
+      if (cw && ch) {
+        camRenderer.setSize(cw, ch, false);
+        fpCam.aspect = cw / ch;
+        fpCam.updateProjectionMatrix();
+      }
+    }
+    new ResizeObserver(resize).observe(stage); new ResizeObserver(resize).observe(camcv.parentElement);
+    wideMQ.addEventListener('change', resize); compactMQ.addEventListener('change', resize); resize();
+
+    /* ---------- controls: limits, profile ---------- */
+    const lim = $('lim'), gain = $('gain');
+    function syncOut() {
+      $('limv').textContent = lim.value + '%'; $('gainv').textContent = gain.value + '%';
+      document.querySelectorAll('#profile button').forEach(b => b.setAttribute('aria-pressed', String(b.dataset.lim === lim.value)));
+    }
+    lim.addEventListener('input', syncOut); gain.addEventListener('input', syncOut);
+    document.querySelectorAll('#profile button').forEach(b => b.addEventListener('click', () => { lim.value = b.dataset.lim; syncOut(); }));
+
+    /* ---------- joystick + keys ---------- */
+    const joy = $('joy'), knob = $('knob');
+    const Rof = () => Math.max(20, (joy.offsetWidth - knob.offsetWidth) / 2);
+    let jx = 0, jy = 0, jActive = false;
+    function drawKnob() { const R = Rof(); knob.style.transform = `translate(${jx * R}px,${jy * R}px)`; }
+    function moveJoy(e) {
+      const r = joy.getBoundingClientRect();
+      let dx = e.clientX - (r.left + r.width / 2), dy = e.clientY - (r.top + r.height / 2);
+      const R = Rof(), m = Math.hypot(dx, dy); if (m > R) { dx *= R / m; dy *= R / m; }
+      jx = dx / R; jy = dy / R; drawKnob();
+    }
+    joy.addEventListener('pointerdown', e => { jActive = true; try { joy.setPointerCapture(e.pointerId); } catch (x) { } moveJoy(e); });
+    joy.addEventListener('pointermove', e => { if (jActive) moveJoy(e); });
+    ['pointerup', 'pointercancel', 'lostpointercapture'].forEach(n => joy.addEventListener(n, () => { jActive = false; jx = jy = 0; drawKnob(); }));
+    const keys = new Set();
+    const KMAP = { z: 'f', w: 'f', arrowup: 'f', s: 'b', arrowdown: 'b', q: 'l', a: 'l', arrowleft: 'l', d: 'r', arrowright: 'r' };
+    addEventListener('keydown', e => {
+      const t = e.target; if (t && (t.tagName === 'INPUT' || t.isContentEditable)) return;
+      const k = e.key.toLowerCase();
+      if (k === ' ') { e.preventDefault(); estop(); return; }
+      if (KMAP[k]) { e.preventDefault(); keys.add(KMAP[k]); }
+    });
+    addEventListener('keyup', e => { const k = KMAP[e.key.toLowerCase()]; if (k) keys.delete(k); });
+    addEventListener('blur', () => keys.clear());
+
+    /* ---------- state ---------- */
+    const st = { armed: false, x: 0, z: 0, h: 0, v: 0, w: 0 };
+    let seq = 0, cmdF = 0, cmdT = 0;
+    let espArmed = false, espSpeed = 0.0, espHeading = null, espSteering = 0.0;
+    function setArmed(a) {
+      st.armed = a; $('arm').disabled = a;
+      $('arm').textContent = a ? 'ARMED \u00b7 MANUAL' : 'ARM \u2192 MANUAL';
+      const chip = $('stateChip'); chip.textContent = a ? 'MANUAL' : 'DISARMED'; chip.className = 'chip ' + (a ? 'on' : 'off');
+      joy.classList.toggle('dim', !a);
+    }
+    function estop() { st.v = 0; st.w = 0; setArmed(false); parent.postMessage({ type: 'ESTOP' }, '*'); }
+    $('arm').addEventListener('click', () => { setArmed(true); parent.postMessage({ type: 'ARM' }, '*'); });
+    $('disarm').addEventListener('click', () => { setArmed(false); parent.postMessage({ type: 'DISARM' }, '*'); });
+    $('estop').addEventListener('click', estop);
+    setArmed(false);
+
+    function axes() {
+      let f = (keys.has('f') ? 1 : 0) - (keys.has('b') ? 1 : 0), t = (keys.has('r') ? 1 : 0) - (keys.has('l') ? 1 : 0);
+      if (!f && !t) { f = -jy; t = jx; if (Math.abs(f) < 0.08) f = 0; if (Math.abs(t) < 0.08) t = 0; }
+      return [Math.max(-1, Math.min(1, f)), Math.max(-1, Math.min(1, t))];
+    }
+
+    /* ---------- loop ---------- */
+    const MAXV = 1.6, MAXW = 1.9, LAT0 = 36.8065, LNG0 = 10.1815;
+    const fmt = (n, d) => (n >= 0 ? '+' : '\u2212') + Math.abs(n).toFixed(d);
+    let prev = performance.now(), hud = 0, frame = 0;
+    const prevPos = new THREE.Vector3();
+    const tmp = new THREE.Vector3(), fwd = new THREE.Vector3();
+
+    function tick(now) {
+      requestAnimationFrame(tick);
+      const dt = Math.min(0.05, (now - prev) / 1000); prev = now;
+      const [f, t] = axes();
+      cmdF = f; cmdT = t;
+      const l = lim.value / 100, g = gain.value / 100;
+      const outF = cmdF * l, outT = cmdT * g;
+
+      // The 3D model physics strictly mocks the real ESP32 behavior!
+      if (!espArmed) {
+        st.v = 0;
+        st.w = 0;
+      } else {
+        const k = 1 - Math.exp(-dt * 5);
+        st.v += (espSpeed - st.v) * k;
+        if (espHeading !== null && !isNaN(espHeading)) {
+          const targetRad = espHeading * Math.PI / 180;
+          let diff = targetRad - st.h;
+          while (diff < -Math.PI) diff += Math.PI * 2;
+          while (diff > Math.PI) diff -= Math.PI * 2;
+          st.h += diff * (1 - Math.exp(-dt * 6));
+        } else {
+          st.w += (espSteering * 1.8 - st.w) * k;
+          st.h += st.w * dt;
+        }
+      }
+      st.x += Math.sin(st.h) * st.v * dt;
+      st.z -= Math.cos(st.h) * st.v * dt;
+
+      prevPos.copy(rover.position);
+      rover.position.set(st.x, 0, st.z); rover.rotation.y = -st.h;
+      rig.position.set(st.x, 0, st.z);
+      sun.position.set(st.x + 4, 9, st.z + 5); sun.target.position.set(st.x, 0, st.z);
+
+      if (Math.hypot(st.x - lastTx, st.z - lastTz) > 0.2 && trailN < TRAIL_MAX) {
+        trailPos.set([st.x, 0.02, st.z], trailN * 3); trailN++; lastTx = st.x; lastTz = st.z;
+        trailGeo.setDrawRange(0, trailN); trailGeo.attributes.position.needsUpdate = true;
+      }
+      wpRing.scale.setScalar(1 + 0.12 * Math.sin(now / 350));
+
+      if (mode === 'orbit') {
+        tmp.copy(rover.position).sub(prevPos); cam.position.add(tmp);
+        controls.target.add(tmp); controls.update();
+      } else {
+        fwd.set(Math.sin(st.h), 0, -Math.cos(st.h));
+        const kk = 1 - Math.exp(-dt * 4);
+        if (mode === 'chase') {
+          tmp.copy(rover.position).addScaledVector(fwd, -3.4); tmp.y = 1.7; cam.position.lerp(tmp, kk);
+          tmp.copy(rover.position).addScaledVector(fwd, 0.5); tmp.y = 0.55; cam.lookAt(tmp);
+        } else {
+          cam.up.set(0, 0, -1);
+          tmp.set(st.x, 11, st.z + 0.001); cam.position.lerp(tmp, kk);
+          cam.lookAt(st.x, 0, st.z);
+        }
+      }
+      renderer.render(scene, cam);
+      if ((frame++ & 1) === 0) {
+        const env = scene.environment; scene.environment = null;
+        camRenderer.render(scene, fpCam);
+        scene.environment = env;
+      }
+
+      hud += dt;
+      if (hud > 0.1) {
+        hud = 0; seq++;
+        $('thr').textContent = fmt(outF, 2); $('str').textContent = fmt(outT, 2);
+        $('tx').textContent = `CMD,1,${seq},${st.armed ? 1 : 0},${outF.toFixed(2)},${outT.toFixed(2)},0`;
+        /* emit axes to parent React app */
+        parent.postMessage({ type: 'AXES', forward: outF, turn: outT, active: st.armed && (outF !== 0 || outT !== 0) }, '*');
+      }
+    }
+    setMode('orbit');
+    requestAnimationFrame(tick);
+
+    /* Navigation button listeners */
+    $('exitCockpit')?.addEventListener('click', () => {
+      parent.postMessage({ type: 'NAVIGATE', to: 'connection' }, '*');
+    });
+    $('toggleClassic')?.addEventListener('click', () => {
+      parent.postMessage({ type: 'TOGGLE_CLASSIC' }, '*');
+    });
+
+    /* ========== postMessage bridge: React <-> Cockpit ========== */
+    /* When React sends telemetry, override the HUD displays.      */
+    window.addEventListener('message', e => {
+      const d = e.data;
+      if (!d || typeof d !== 'object') return;
+
+      if (d.type === 'CONNECTED') {
+        const isConn = d.connected === true;
+        const pill = $('bleStatus');
+        if (pill) {
+          pill.textContent = isConn ? 'MQTT \u00b7 connected' : 'MQTT \u00b7 disconnected';
+          pill.style.color = isConn ? 'var(--go)' : 'var(--warn)';
+          pill.style.borderColor = isConn ? 'var(--go)' : 'rgba(245,183,59,.5)';
+        }
+        const link = $('linkVal');
+        if (link) link.textContent = isConn ? 'MQTT OK' : 'No Link';
+
+        if (!isConn) {
+          if (st.armed) { st.v = 0; st.w = 0; setArmed(false); }
+          espArmed = false; espSpeed = 0.0; espHeading = null; espSteering = 0.0;
+          const bv = $('batVal'); if (bv) bv.textContent = '\u2014';
+          const bb = $('batBar'); if (bb) bb.style.width = '0%';
+          const vv = $('voltVal'); if (vv) vv.textContent = '\u2014';
+          const rs = $('rssi'); if (rs) rs.textContent = '\u2014';
+          const ta = $('tage'); if (ta) ta.textContent = '\u2014';
+          const lt = $('lat'); if (lt) lt.textContent = '\u2014';
+          const lg = $('lng'); if (lg) lg.textContent = '\u2014';
+          const sp = $('spd'); if (sp) sp.textContent = '\u2014';
+          const hg = $('hdg'); if (hg) hg.textContent = '\u2014';
+          const stEl = $('sats'); if (stEl) stEl.textContent = '0';
+          const fa = $('fage'); if (fa) fa.textContent = '\u2014';
+          const gf = $('gpsFix'); if (gf) { gf.textContent = 'NO FIX'; gf.style.color = 'var(--mut)'; }
+          const tv = $('tempVal'); if (tv) tv.textContent = '\u2014';
+          const hv = $('humVal'); if (hv) hv.textContent = '\u2014';
+          const gv = $('gasVal'); if (gv) gv.textContent = '\u2014';
+          const gc = $('gasChip'); if (gc) { gc.textContent = 'CLEAN'; gc.className = 'chip off'; gc.style.background = ''; gc.style.color = ''; }
+          const rxEl = $('rx'); if (rxEl) rxEl.textContent = 'WAITING FOR MQTT TELEMETRY...';
+          const txEl = $('tx'); if (txEl) txEl.textContent = '\u2014';
+        }
+      }
+
+      if (d.type === 'STATE') {
+        const shouldArm = d.armed === true;
+        if (shouldArm !== st.armed) setArmed(shouldArm);
+      }
+
+      if (d.type === 'TELEMETRY') {
+        const r = d.data || {};
+        if (r.STATE !== undefined) {
+          espArmed = (r.STATE === 'MANUAL');
+          if (espArmed !== st.armed) setArmed(espArmed);
+        }
+        if (r.SPEED !== undefined) {
+          espSpeed = parseFloat(r.SPEED) || 0.0;
+        }
+        if (r.HEADING !== undefined) {
+          const hdgNum = parseFloat(r.HEADING);
+          if (!isNaN(hdgNum)) espHeading = hdgNum;
+        }
+        if (r.CMD_T !== undefined || r.STEERING !== undefined) {
+          espSteering = parseFloat(r.CMD_T || r.STEERING) || 0.0;
+        }
+        if (r.BATTERY !== undefined && r.BATTERY !== null) {
+          const pct = parseFloat(r.BATTERY);
+          if (!isNaN(pct)) {
+            const bv = $('batVal'); if (bv) bv.textContent = pct.toFixed(0);
+            const bb = $('batBar');
+            if (bb) {
+              bb.style.width = Math.min(100, Math.max(0, pct)) + '%';
+              bb.style.background = pct < 20 ? 'var(--stop)' : 'var(--go)';
+            }
+          }
+        }
+        if (r.BATTERY_V !== undefined && r.BATTERY_V !== '') {
+          const vv = $('voltVal'); if (vv) vv.textContent = parseFloat(r.BATTERY_V).toFixed(1);
+        }
+        if (r.RSSI !== undefined && r.RSSI !== '') {
+          const rs = $('rssi'); if (rs) rs.textContent = r.RSSI;
+        }
+        if (r.AGE_MS !== undefined && r.AGE_MS !== '') {
+          const ta = $('tage'); if (ta) ta.textContent = r.AGE_MS;
+          const fa = $('fage'); if (fa) fa.textContent = r.AGE_MS;
+        }
+        if (r.HEADING !== undefined && r.HEADING !== '') {
+          const hg = $('hdg'); if (hg) hg.textContent = String(parseInt(r.HEADING) || 0).padStart(3, '0');
+        }
+        if (r.SPEED !== undefined && r.SPEED !== '') {
+          const sp = $('spd'); if (sp) sp.textContent = parseFloat(r.SPEED).toFixed(1);
+        }
+        if (r.SATS !== undefined && r.SATS !== '') {
+          const stEl = $('sats'); if (stEl) stEl.textContent = r.SATS;
+        }
+        if (r.GPS_FIX !== undefined) {
+          const hasFix = String(r.GPS_FIX) === '1';
+          const gf = $('gpsFix');
+          if (gf) {
+            gf.textContent = hasFix ? 'FIX OK' : 'NO FIX';
+            gf.style.color = hasFix ? 'var(--go)' : 'var(--mut)';
+          }
+        }
+        if (r.GPS !== undefined && r.GPS !== '' && r.GPS !== 'unavailable') {
+          const parts = r.GPS.split(',');
+          if (parts.length >= 2) {
+            const lat2 = parseFloat(parts[0]), lng2 = parseFloat(parts[1]);
+            if (!isNaN(lat2) && !isNaN(lng2)) {
+              const lt = $('lat'); if (lt) lt.textContent = Math.abs(lat2).toFixed(6) + '\u00b0 ' + (lat2 >= 0 ? 'N' : 'S');
+              const lg = $('lng'); if (lg) lg.textContent = Math.abs(lng2).toFixed(6) + '\u00b0 ' + (lng2 >= 0 ? 'E' : 'W');
+            }
+          }
+        }
+        if (r.TEMP !== undefined && r.TEMP !== '') {
+          const tv = $('tempVal'); if (tv) tv.textContent = r.TEMP;
+        }
+        if (r.HUMIDITY !== undefined && r.HUMIDITY !== '') {
+          const hv = $('humVal'); if (hv) hv.textContent = r.HUMIDITY;
+        }
+        if (r.GAS !== undefined && r.GAS !== '') {
+          const gv = $('gasVal'); if (gv) gv.textContent = r.GAS;
+          const gc = $('gasChip');
+          if (gc) {
+            const gasNum = parseFloat(r.GAS);
+            if (gasNum > 1500 || r.GAS_STATUS === 'ALERT' || r.GAS_ALERT === '1') {
+              gc.textContent = 'DANGER';
+              gc.className = 'chip';
+              gc.style.background = 'var(--stop)';
+              gc.style.color = '#fff';
+            } else if (gasNum > 600 || r.GAS_STATUS === 'WARNING') {
+              gc.textContent = 'WARN';
+              gc.className = 'chip';
+              gc.style.background = 'var(--warn)';
+              gc.style.color = '#000';
+            } else {
+              gc.textContent = 'CLEAN';
+              gc.className = 'chip on';
+              gc.style.background = 'var(--go)';
+              gc.style.color = 'var(--go-ink)';
+            }
+          }
+        }
+        if (d.rawString) {
+          const rxEl = $('rx'); if (rxEl) rxEl.textContent = d.rawString;
+        }
+      }
+    });
+  </script>
+
+</body>
+
+</html>

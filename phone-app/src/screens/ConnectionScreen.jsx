@@ -13,7 +13,7 @@ export default function ConnectionScreen({ state, connected, connect, disconnect
         <div className="flex items-center justify-between">
           <div>
             <div className="text-sm font-semibold">Connection</div>
-            <div className="text-[10px] text-white/50">BLE link to RoverX</div>
+            <div className="text-[10px] text-white/50">MQTT Cloud Link (Wi-Fi / HiveMQ)</div>
           </div>
           <div className="flex items-center gap-2">
             <span className={`h-2.5 w-2.5 rounded-full ${connected ? "bg-green-400" : "bg-red-500"}`} />

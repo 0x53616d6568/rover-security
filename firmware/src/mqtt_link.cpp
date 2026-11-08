@@ -18,6 +18,7 @@ void MqttLink::begin(MessageHandler handler) {
   Serial.printf("[WiFi]   SSID : %s\n", secrets::WIFI_SSID);
   WiFi.mode(WIFI_STA);
   WiFi.setAutoReconnect(true);
+  WiFi.setTxPower(WIFI_POWER_15dBm);  // Smooth out RF current spikes for breadboard power
   WiFi.begin(secrets::WIFI_SSID, secrets::WIFI_PASSWORD);  // non-blocking
 
   // Print WiFi connection progress

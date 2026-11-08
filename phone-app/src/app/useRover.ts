@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useRef, useReducer } from "react";
 
-import { WebBluetoothAdapter, DemoAdapter } from "../ble";
+import { DemoAdapter, MqttAdapter } from "../ble";
 import type { BleAdapter } from "../ble/types";
 import { clampAxis, encodeCommand } from "../protocol/command";
 import { parseTelemetry } from "../protocol/telemetry";
@@ -38,7 +38,7 @@ export function useRover() {
       void previous.disconnect().catch(() => undefined);
     }
 
-    const adapter = state.demoMode ? new DemoAdapter() : new WebBluetoothAdapter();
+    const adapter = state.demoMode ? new DemoAdapter() : new MqttAdapter();
     adapterRef.current = adapter;
 
     dispatch({
