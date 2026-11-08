@@ -1,10 +1,11 @@
-import type { BleAdapter } from "./types";
+import type { BleAdapter, LinkStates } from "./types";
 
 export class DemoAdapter implements BleAdapter {
   readonly id = "demo";
 
   private statusListeners = new Set<(raw: string, receivedAt: number) => void>();
   private connectionListeners = new Set<(connected: boolean, authorized: boolean, receivedAt: number) => void>();
+  private linkListeners = new Set<(links: LinkStates) => void>();
   private connected = false;
   private safetyState = "DISARMED";
   private lastSequence = 0;
@@ -24,6 +25,7 @@ export class DemoAdapter implements BleAdapter {
     this.connected = true;
     const now = Date.now();
     for (const listener of this.connectionListeners) listener(true, true, now);
+    this.emitLinks();
     this.emit(`STATE=${this.safetyState};EVENT=CONNECTED_REARM_REQUIRED;SEQ=${this.lastSequence};VALID=1;SENSOR_DATA=SIMULATED;AGE_MS=0;GPS=Tunis, Tunisia;GPS_VALIDITY=simulated`);
     this.timer = window.setInterval(() => {
       if (!this.connected) return;
@@ -39,6 +41,7 @@ export class DemoAdapter implements BleAdapter {
     }
     const now = Date.now();
     for (const listener of this.connectionListeners) listener(false, false, now);
+    this.emitLinks();
     this.safetyState = "DISARMED";
   }
 
@@ -112,6 +115,17 @@ export class DemoAdapter implements BleAdapter {
   onConnection(listener: (connected: boolean, authorized: boolean, receivedAt: number) => void): () => void {
     this.connectionListeners.add(listener);
     return () => this.connectionListeners.delete(listener);
+  }
+
+  onLinks(listener: (links: LinkStates) => void): () => void {
+    this.linkListeners.add(listener);
+    listener({ telemetry: this.connected, command: this.connected });
+    return () => this.linkListeners.delete(listener);
+  }
+
+  private emitLinks(): void {
+    const links: LinkStates = { telemetry: this.connected, command: this.connected };
+    for (const listener of this.linkListeners) listener(links);
   }
 
   private emit(raw: string): void {

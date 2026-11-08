@@ -144,8 +144,11 @@ export default function ControlScreen({ state, connected, arm, disarm, stop, set
           {/* Joystick */}
           <div className={panel}>
             <div className="mb-2 text-xs font-semibold text-white/80">Manual driving</div>
-            <div className="flex items-center justify-between text-[10px] text-white/60 mb-2">
+            <div className="mb-2 flex flex-wrap items-center justify-between gap-2 text-[10px] text-white/60">
               <span>Mode: {state.safetyState}</span>
+              <span className={state.links.command ? "text-green-400" : "text-red-400"}>
+                Command MQTT: {state.links.command ? "Online" : "Offline"}
+              </span>
               <span>Authority: {state.authorized ? "Operator" : "None"}</span>
             </div>
             <div className="flex h-36 items-center justify-center">

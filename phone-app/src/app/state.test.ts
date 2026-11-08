@@ -15,6 +15,7 @@ describe("initialState", () => {
     expect(state.connectionStatus).toBe("idle");
     expect(state.safetyState).toBe("DISARMED");
     expect(state.authorized).toBe(false);
+    expect(state.links).toEqual({ telemetry: false, command: false });
     expect(state.axes).toEqual({ forward: 0, turn: 0 });
     expect(state.lastSequence).toBe(0);
   });
@@ -63,6 +64,26 @@ describe("CONNECTION_CHANGED", () => {
     expect(state.safetyState).toBe("SAFE_STOP");
     expect(state.axes).toEqual({ forward: 0, turn: 0 });
     expect(state.events[0]?.message).toContain("Motion stopped");
+  });
+});
+
+describe("LINKS_CHANGED", () => {
+  it("tracks telemetry and command links independently", () => {
+    const state = appReducer(initialState(), {
+      type: "LINKS_CHANGED",
+      links: { telemetry: true, command: false },
+    });
+
+    expect(state.links).toEqual({ telemetry: true, command: false });
+  });
+
+  it("clears both links on a connection error", () => {
+    const state = appReducer(
+      { ...initialState(), links: { telemetry: true, command: true } },
+      { type: "CONNECTION_ERROR", message: "Command broker timed out" },
+    );
+
+    expect(state.links).toEqual({ telemetry: false, command: false });
   });
 });
 

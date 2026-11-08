@@ -60,10 +60,14 @@ export function useRover() {
     const unsubConnection = adapter.onConnection((connected, authorized, receivedAt) => {
       dispatch({ type: "CONNECTION_CHANGED", connected, authorized, at: receivedAt });
     });
+    const unsubLinks = adapter.onLinks((links) => {
+      dispatch({ type: "LINKS_CHANGED", links });
+    });
 
     return () => {
       unsubStatus();
       unsubConnection();
+      unsubLinks();
       void adapter.disconnect().catch(() => undefined);
       if (adapterRef.current === adapter) adapterRef.current = null;
     };

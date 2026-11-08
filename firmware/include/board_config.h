@@ -15,9 +15,9 @@ constexpr char AUTHORIZED_CENTRAL_ADDRESS[] = "00:00:00:00:00:00";
 constexpr size_t BLE_MAX_FRAME_LENGTH = 64;
 
 // ---- MQTT ----
-// Topics become drone/<DRONE_ID>/command and drone/<DRONE_ID>/telemetry.
-// Set this to the drone id your UI subscribes/publishes with.
-constexpr char DRONE_ID[] = "1";
+// Topics become rover/<ROVER_ID>/command and rover/<ROVER_ID>/telemetry.
+// Set this to the rover id your UI subscribes/publishes with.
+constexpr char ROVER_ID[] = "1";
 
 // ---- Timing ----
 constexpr uint32_t COMMAND_TIMEOUT_MS = 500;   // no command -> SAFE_STOP
@@ -46,5 +46,11 @@ constexpr uint8_t PWM_RESOLUTION_BITS = 8;
 constexpr int GPS_RX_PIN = 16;   // ESP32 RX  <- GPS TX
 constexpr int GPS_TX_PIN = 17;   // ESP32 TX  -> GPS RX
 constexpr uint32_t GPS_BAUD = 9600;
+
+// ---- Sensors ----
+constexpr int DHT_PIN = 4;            // GPIO 4 (D4)
+constexpr int DHT_TYPE = 11;          // DHT11
+constexpr int MQ2_PIN = 35;           // ADC1_CH7 (analog in)
+constexpr int BATTERY_ADC_PIN = 34;   // ADC1_CH6 (analog in)
 
 }  // namespace board

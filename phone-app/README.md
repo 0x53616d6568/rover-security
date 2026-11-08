@@ -2,9 +2,11 @@
 
 ## Purpose
 
-This folder is reserved for the Phase 1 operator interface. The app will be a
-responsive browser application that can run on a phone or a PC and connect
-directly to the main ESP32 over local Bluetooth Low Energy (BLE).
+This folder is the Phase 1 operator interface. The app is a responsive browser
+application that runs on a phone or a PC. It uses a split MQTT architecture:
+telemetry is read from a telemetry broker and drive commands are published to a
+separate command broker. BLE remains available as an alternate local control
+path for bring-up and bench testing.
 
 The browser app is a control surface, not a second safety controller. The
 ESP32 remains responsible for authorization, command validation, motor output,
@@ -17,8 +19,11 @@ always independent of this app.
 - **UI:** React with semantic components, responsive CSS, touch-friendly
   controls, and a prominent software STOP.
 - **Build tooling:** Vite for local development and a static production build.
-- **BLE transport:** the browser Web Bluetooth API using the rover's documented
-  GATT service, command characteristic, and status characteristic.
+- **Transport:** MQTT over WebSocket TLS — one telemetry broker (subscribe
+  only) and one command broker (publish only). See
+  [`docs/mqtt-architecture.md`](../docs/mqtt-architecture.md).
+- **BLE transport (alternate):** the browser Web Bluetooth API using the rover's
+  documented GATT service, command characteristic, and status characteristic.
 - **Packaging:** installable Progressive Web App (PWA) for supported mobile
   browsers, while remaining usable as a normal browser page on a PC.
 - **Testing:** unit tests for command encoding, bounds, sequence handling, and
@@ -102,9 +107,12 @@ real telemetry defaults.
 
 ## Browser and safety constraints
 
-- Use local BLE only; no Wi-Fi, cloud, MQTT, public endpoint, or remote control
-  path is part of Phase 1.
-- Keep BLE permission and device identifiers out of logs and screenshots.
+- Keep telemetry and command credentials separate. The telemetry credential must
+  never be able to publish drive commands; the command credential must never be
+  able to inject telemetry.
+- Keep broker credentials, BLE permission, and device identifiers out of logs
+  and screenshots. Browser-exposed credentials are visible in the app bundle, so
+  treat command-broker access as the control boundary.
 - Disable movement controls when disconnected, disarmed, faulted, unsupported,
   or awaiting an explicit arm action.
 - Treat status notifications as authoritative for command success; local writes
@@ -135,6 +143,26 @@ npm run dev
 Open the printed URL in a Chromium-based browser. Web Bluetooth requires a
 secure context (`https://` or `localhost`). Use **Demo: on** to exercise the UI
 without hardware; demo values are explicitly labelled as simulated.
+
+### MQTT configuration
+
+Copy `.env.example` to `.env.local` (gitignored) and fill in both brokers:
+
+```text
+VITE_MQTT_TELEMETRY_URL=wss://<telemetry-host>:8884/mqtt
+VITE_MQTT_TELEMETRY_USER=...
+VITE_MQTT_TELEMETRY_PASS=...
+VITE_MQTT_TELEMETRY_TOPIC=rover/1/telemetry
+
+VITE_MQTT_COMMAND_URL=wss://<command-host>:8884/mqtt
+VITE_MQTT_COMMAND_USER=...
+VITE_MQTT_COMMAND_PASS=...
+VITE_MQTT_COMMAND_TOPIC=rover/1/command
+```
+
+The dashboard connects both links; arming requires the command link. The
+telemetry link only subscribes. Never use the raw MQTT TLS port `8883` from the
+browser — use WebSocket TLS on `8884` with path `/mqtt`.
 
 ### Test and check
 
@@ -172,7 +200,7 @@ phone-app/
 ├── public/           PWA manifest and static assets
 └── src/
     ├── app/          React shell, reducer, and rover control hook
-    ├── ble/          Web Bluetooth adapter and demo adapter
+    ├── ble/          MQTT split adapter, Web Bluetooth adapter, demo adapter
     ├── protocol/     command encoding and telemetry parsing
     ├── components/   reusable controls and telemetry cards
     └── styles/       design tokens and responsive presentation

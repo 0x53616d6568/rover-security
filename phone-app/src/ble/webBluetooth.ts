@@ -1,4 +1,4 @@
-import type { BleAdapter } from "./types";
+import type { BleAdapter, LinkStates } from "./types";
 
 const SERVICE_UUID = "8f4d0001-4f4b-4e49-9e4f-454e49534f01";
 const COMMAND_UUID = "8f4d0002-4f4b-4e49-9e4f-454e49534f01";
@@ -43,6 +43,7 @@ export class WebBluetoothAdapter implements BleAdapter {
   private statusCharacteristic: BluetoothRemoteGATTCharacteristicLike | null = null;
   private statusListeners = new Set<(raw: string, receivedAt: number) => void>();
   private connectionListeners = new Set<(connected: boolean, authorized: boolean, receivedAt: number) => void>();
+  private linkListeners = new Set<(links: LinkStates) => void>();
   private statusHandler: ((event: Event) => void) | null = null;
   private disconnectHandler: ((event: Event) => void) | null = null;
 
@@ -72,6 +73,7 @@ export class WebBluetoothAdapter implements BleAdapter {
       this.statusCharacteristic = null;
       const now = Date.now();
       for (const listener of this.connectionListeners) listener(false, false, now);
+      this.emitLinks(false);
     };
     this.device.addEventListener("gattserverdisconnected", this.disconnectHandler);
 
@@ -96,6 +98,7 @@ export class WebBluetoothAdapter implements BleAdapter {
 
     const now = Date.now();
     for (const listener of this.connectionListeners) listener(true, true, now);
+    this.emitLinks(true);
   }
 
   async disconnect(): Promise<void> {
@@ -117,6 +120,7 @@ export class WebBluetoothAdapter implements BleAdapter {
     this.device = null;
     const now = Date.now();
     for (const listener of this.connectionListeners) listener(false, false, now);
+    this.emitLinks(false);
   }
 
   async writeCommand(frame: string): Promise<void> {
@@ -137,5 +141,16 @@ export class WebBluetoothAdapter implements BleAdapter {
   onConnection(listener: (connected: boolean, authorized: boolean, receivedAt: number) => void): () => void {
     this.connectionListeners.add(listener);
     return () => this.connectionListeners.delete(listener);
+  }
+
+  onLinks(listener: (links: LinkStates) => void): () => void {
+    this.linkListeners.add(listener);
+    listener({ telemetry: this.commandCharacteristic !== null, command: this.commandCharacteristic !== null });
+    return () => this.linkListeners.delete(listener);
+  }
+
+  private emitLinks(connected: boolean): void {
+    const links: LinkStates = { telemetry: connected, command: connected };
+    for (const listener of this.linkListeners) listener(links);
   }
 }

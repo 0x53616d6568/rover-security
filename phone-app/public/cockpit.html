@@ -328,6 +328,87 @@
       font-weight: 600
     }
 
+    /* Command MQTT link: fixed overlay so it stays readable on top of the 3D scene
+       in every layout, including the panoramic HUD mode where the header is hidden. */
+    .cmdlink {
+      position: fixed;
+      left: 50%;
+      bottom: max(74px, calc(env(safe-area-inset-bottom, 0px) + 62px));
+      transform: translateX(-50%);
+      z-index: 60;
+      pointer-events: none;
+      display: inline-flex;
+      align-items: center;
+      gap: 9px;
+      padding: 8px 18px;
+      border-radius: 999px;
+      border: 1.5px solid var(--warn);
+      background: rgba(8, 13, 11, .88);
+      color: var(--warn);
+      font-family: var(--mono);
+      font-size: 13px;
+      font-weight: 800;
+      letter-spacing: .08em;
+      text-transform: uppercase;
+      white-space: nowrap;
+      box-shadow: 0 8px 26px rgba(0, 0, 0, .5);
+      transition: color .2s, border-color .2s, background .2s
+    }
+
+    .cmdlink .dot {
+      width: 10px;
+      height: 10px;
+      border-radius: 50%;
+      background: currentColor;
+      box-shadow: 0 0 10px currentColor;
+      flex: none
+    }
+
+    .cmdlink .state {
+      font-weight: 900
+    }
+
+    .cmdlink[data-state="on"] {
+      color: var(--go);
+      border-color: var(--go);
+      background: rgba(6, 19, 12, .9)
+    }
+
+    .cmdlink[data-state="off"] {
+      color: #fff;
+      border-color: var(--stop);
+      background: var(--stop);
+      box-shadow: 0 0 0 4px rgba(229, 72, 77, .28), 0 8px 26px rgba(0, 0, 0, .5)
+    }
+
+    .cmdlink[data-state="off"] .dot {
+      background: #fff;
+      box-shadow: 0 0 10px #fff;
+      animation: cmdPulse 1s ease-in-out infinite
+    }
+
+    @keyframes cmdPulse {
+      50% {
+        opacity: .25
+      }
+    }
+
+    @media (max-width:560px) {
+      .cmdlink {
+        font-size: 11px;
+        padding: 6px 12px;
+        gap: 7px;
+        bottom: max(66px, calc(env(safe-area-inset-bottom, 0px) + 56px))
+      }
+    }
+
+    /* Desktop keeps the view switcher and RX/TX frames at the bottom centre. */
+    @media (min-width:1100px) {
+      .cmdlink {
+        bottom: 128px
+      }
+    }
+
     /* camera */
     .cam {
       order: 2;
@@ -1114,6 +1195,12 @@
     </div>
   </main>
 
+  <div class="cmdlink" id="cmdLink" data-state="wait" role="status" aria-live="polite">
+    <span class="dot" aria-hidden="true"></span>
+    <span>Command MQTT</span>
+    <span class="state" id="cmdLinkState">checking</span>
+  </div>
+
 
   <script
     type="importmap">{"imports":{"three":"https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js","three/addons/":"https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/"}}</script>
@@ -1399,43 +1486,72 @@
 
     /* ========== postMessage bridge: React <-> Cockpit ========== */
     /* When React sends telemetry, override the HUD displays.      */
+    let cmdLinkUp = false;
+
+    function lockDriveControls() {
+      if (st.armed) { st.v = 0; st.w = 0; setArmed(false); }
+      espArmed = false; espSpeed = 0.0; espHeading = null; espSteering = 0.0;
+    }
+
+    function clearTelemetryHud() {
+      const setText = (id, value) => { const el = $(id); if (el) el.textContent = value; };
+      setText('batVal', '\u2014');
+      const bb = $('batBar'); if (bb) bb.style.width = '0%';
+      setText('voltVal', '\u2014');
+      setText('rssi', '\u2014');
+      setText('tage', '\u2014');
+      setText('lat', '\u2014');
+      setText('lng', '\u2014');
+      setText('spd', '\u2014');
+      setText('hdg', '\u2014');
+      setText('sats', '0');
+      setText('fage', '\u2014');
+      setText('tempVal', '\u2014');
+      setText('humVal', '\u2014');
+      setText('gasVal', '\u2014');
+      const gf = $('gpsFix'); if (gf) { gf.textContent = 'NO FIX'; gf.style.color = 'var(--mut)'; }
+      const gc = $('gasChip'); if (gc) { gc.textContent = 'CLEAN'; gc.className = 'chip off'; gc.style.background = ''; gc.style.color = ''; }
+      setText('rx', 'WAITING FOR MQTT TELEMETRY...');
+      setText('tx', '\u2014');
+    }
+
     window.addEventListener('message', e => {
       const d = e.data;
       if (!d || typeof d !== 'object') return;
 
       if (d.type === 'CONNECTED') {
-        const isConn = d.connected === true;
+        /* Only the command link authorizes motion; telemetry is read-only. */
+        if (typeof d.command === 'boolean') cmdLinkUp = d.command;
+        if (d.command === false) lockDriveControls();
+      }
+
+      if (d.type === 'LINKS') {
+        const cmd = d.command === true;
+        const tel = d.telemetry === true;
+        const busy = d.connectionStatus === 'connecting';
+        cmdLinkUp = cmd;
+
+        const box = $('cmdLink');
+        if (box) box.dataset.state = cmd ? 'on' : busy ? 'wait' : 'off';
+        const txt = $('cmdLinkState');
+        if (txt) txt.textContent = cmd ? 'online' : busy ? 'connecting\u2026' : 'offline \u00b7 drive locked';
+
         const pill = $('bleStatus');
         if (pill) {
-          pill.textContent = isConn ? 'MQTT \u00b7 connected' : 'MQTT \u00b7 disconnected';
-          pill.style.color = isConn ? 'var(--go)' : 'var(--warn)';
-          pill.style.borderColor = isConn ? 'var(--go)' : 'rgba(245,183,59,.5)';
+          pill.textContent = 'MQTT \u00b7 TEL ' + (tel ? 'ON' : 'OFF') + ' \u00b7 CMD ' + (cmd ? 'ON' : 'OFF');
+          pill.style.color = cmd ? 'var(--go)' : 'var(--warn)';
+          pill.style.borderColor = cmd ? 'var(--go)' : 'rgba(245,183,59,.5)';
         }
         const link = $('linkVal');
-        if (link) link.textContent = isConn ? 'MQTT OK' : 'No Link';
-
-        if (!isConn) {
-          if (st.armed) { st.v = 0; st.w = 0; setArmed(false); }
-          espArmed = false; espSpeed = 0.0; espHeading = null; espSteering = 0.0;
-          const bv = $('batVal'); if (bv) bv.textContent = '\u2014';
-          const bb = $('batBar'); if (bb) bb.style.width = '0%';
-          const vv = $('voltVal'); if (vv) vv.textContent = '\u2014';
-          const rs = $('rssi'); if (rs) rs.textContent = '\u2014';
-          const ta = $('tage'); if (ta) ta.textContent = '\u2014';
-          const lt = $('lat'); if (lt) lt.textContent = '\u2014';
-          const lg = $('lng'); if (lg) lg.textContent = '\u2014';
-          const sp = $('spd'); if (sp) sp.textContent = '\u2014';
-          const hg = $('hdg'); if (hg) hg.textContent = '\u2014';
-          const stEl = $('sats'); if (stEl) stEl.textContent = '0';
-          const fa = $('fage'); if (fa) fa.textContent = '\u2014';
-          const gf = $('gpsFix'); if (gf) { gf.textContent = 'NO FIX'; gf.style.color = 'var(--mut)'; }
-          const tv = $('tempVal'); if (tv) tv.textContent = '\u2014';
-          const hv = $('humVal'); if (hv) hv.textContent = '\u2014';
-          const gv = $('gasVal'); if (gv) gv.textContent = '\u2014';
-          const gc = $('gasChip'); if (gc) { gc.textContent = 'CLEAN'; gc.className = 'chip off'; gc.style.background = ''; gc.style.color = ''; }
-          const rxEl = $('rx'); if (rxEl) rxEl.textContent = 'WAITING FOR MQTT TELEMETRY...';
-          const txEl = $('tx'); if (txEl) txEl.textContent = '\u2014';
+        if (link) {
+          link.textContent = cmd ? 'CMD OK' : 'No Link';
+          link.style.color = cmd ? 'var(--go)' : 'var(--stop)';
         }
+
+        /* Telemetry is read-only: blank readings only when its own link drops. */
+        if (!tel) clearTelemetryHud();
+        /* Motion requires the command link; losing it locks driving immediately. */
+        if (!cmd) lockDriveControls();
       }
 
       if (d.type === 'STATE') {
@@ -1446,7 +1562,7 @@
       if (d.type === 'TELEMETRY') {
         const r = d.data || {};
         if (r.STATE !== undefined) {
-          espArmed = (r.STATE === 'MANUAL');
+          espArmed = cmdLinkUp && (r.STATE === 'MANUAL');
           if (espArmed !== st.armed) setArmed(espArmed);
         }
         if (r.SPEED !== undefined) {

@@ -1,3 +1,4 @@
+import type { LinkStates } from "../ble/types";
 import type {
   CommandAck,
   ConnectionStatus,
@@ -15,6 +16,7 @@ export interface AppState {
   connectionStatus: ConnectionStatus;
   connectionError?: string;
   authorized: boolean;
+  links: LinkStates;
   safetyState: SafetyState;
   telemetry?: RoverTelemetry;
   lastCommand?: { sequence: number; frame: string; sentAt: number };
@@ -33,6 +35,7 @@ export type AppAction =
   | { type: "SET_SUPPORT"; supported: boolean; message: string }
   | { type: "SET_DEMO_MODE"; enabled: boolean }
   | { type: "CONNECTION_CHANGED"; connected: boolean; authorized: boolean; at: number }
+  | { type: "LINKS_CHANGED"; links: LinkStates }
   | { type: "SET_CONNECTION_STATUS"; status: ConnectionStatus }
   | { type: "CONNECTION_ERROR"; message: string }
   | { type: "CLEAR_CONNECTION_ERROR" }
@@ -57,6 +60,7 @@ export function initialState(demoMode = false, supported = true, supportMessage 
   return {
     connectionStatus: "idle",
     authorized: false,
+    links: { telemetry: false, command: false },
     safetyState: "DISARMED",
     axes: { forward: 0, turn: 0 },
     events: [],
@@ -77,6 +81,8 @@ export function appReducer(state: AppState, action: AppAction): AppState {
       return { ...state, demoMode: action.enabled };
     case "SET_CONNECTION_STATUS":
       return { ...state, connectionStatus: action.status };
+    case "LINKS_CHANGED":
+      return { ...state, links: action.links };
     case "CONNECTION_CHANGED": {
       const connected = action.connected;
       const status: ConnectionStatus = connected ? "connected" : "disconnected";
@@ -105,6 +111,7 @@ export function appReducer(state: AppState, action: AppAction): AppState {
         ...state,
         connectionStatus: "error",
         connectionError: action.message,
+        links: { telemetry: false, command: false },
         events: [createEvent("error", action.message), ...state.events].slice(0, MAX_EVENTS),
       };
     case "CLEAR_CONNECTION_ERROR":

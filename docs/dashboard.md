@@ -2,11 +2,11 @@
 
 ## Goal
 
-Provide a readable phone interface over the rover’s local BLE link for manual drive and telemetry. Keep a prominent software STOP, show link and safety state immediately, and prevent commands when the rover is disconnected or not ready. The software STOP does not replace the physical cut-off.
+Provide a readable phone interface for manual drive and telemetry over the split MQTT links (telemetry broker for reads, command broker for writes), with BLE as an alternate local path. Keep a prominent software STOP, show link and safety state immediately, and prevent commands when the rover is disconnected or not ready. The software STOP does not replace the physical cut-off.
 
 ## Minimum screen
 
-- **Control/safety:** BLE connected/disconnected, DISARMED / MANUAL / SAFE STOP / FAULT, joystick axes, arm/disarm, STOP, quality/age of the last command, acknowledgement/rejection.
+- **Control/safety:** command-link connected/disconnected, telemetry-link status, DISARMED / MANUAL / SAFE STOP / FAULT, joystick axes, arm/disarm, STOP, quality/age of the last command, acknowledgement/rejection.
 - **Power:** battery voltage and alerts only if a divider/measurement is actually installed and calibrated; current only when the selected driver/sensor output is verified.
 - **Motion:** encoder-derived left/right speed if encoders are fitted and calibrated; IMU inclination/angular rate and compass heading only with validity/calibration status.
 - **GPS:** fix validity, coordinates, satellites, HDOP and age; informational in Phase 1, not an autonomous route.

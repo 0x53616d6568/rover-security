@@ -3,6 +3,7 @@
 
 #include "board_config.h"
 #include "rover_controller.h"
+#include "secrets.h"
 
 RoverController* RoverController::instance_ = nullptr;
 
@@ -56,8 +57,34 @@ void RoverController::begin() {
   analogReadResolution(12);
   analogSetAttenuation(ADC_11db);
 
-  Serial.println("[MQTT] Initializing MQTT/WiFi...");
-  mqtt_.begin(handleMqtt);
+  Serial.println("[MQTT] Initializing split MQTT links...");
+  MqttLink::beginNetwork();
+
+  const String topicBase = String("rover/") + board::ROVER_ID;
+  const String roverId = String("rover_") + board::ROVER_ID;
+
+  MqttEndpoint telemetry;
+  telemetry.host = secrets::MQTT_TELEMETRY_HOST;
+  telemetry.port = secrets::MQTT_TELEMETRY_PORT;
+  telemetry.user = secrets::MQTT_TELEMETRY_USER;
+  telemetry.pass = secrets::MQTT_TELEMETRY_PASS;
+  telemetry.clientId = roverId + "_telemetry";
+  telemetry.topic = topicBase + "/telemetry";
+  telemetry.publish = true;
+  telemetry.subscribe = false;  // telemetry broker must never drive the rover
+  telemetry.availabilityTopic = topicBase + "/availability";
+  telemetryLink_.begin(telemetry);
+
+  MqttEndpoint command;
+  command.host = secrets::MQTT_COMMAND_HOST;
+  command.port = secrets::MQTT_COMMAND_PORT;
+  command.user = secrets::MQTT_COMMAND_USER;
+  command.pass = secrets::MQTT_COMMAND_PASS;
+  command.clientId = roverId + "_command";
+  command.topic = topicBase + "/command";
+  command.publish = false;  // command broker must never publish telemetry
+  command.subscribe = true;
+  commandLink_.begin(command, handleMqtt);
 
   Serial.println("[WDT] Setting watchdog timer to 10s...");
   esp_task_wdt_init(10, true);  // reset the board if the loop ever hangs
@@ -104,10 +131,12 @@ void RoverController::update() {
     Serial.printf("[SAFETY] Command timeout! No command for >%dms — SAFE_STOP\n", board::COMMAND_TIMEOUT_MS);
     forceStop(SafetyState::SAFE_STOP, "COMMAND_TIMEOUT");
   }
-  // Never reconnect MQTT (blocking TLS) while driving.
-  mqtt_.update(safetyState_ != SafetyState::MANUAL);
+  // Never reconnect either MQTT link (blocking TLS) while driving.
+  commandLink_.update(safetyState_ != SafetyState::MANUAL);
+  telemetryLink_.update(safetyState_ != SafetyState::MANUAL);
   const bool bleOk = ble_.connected() && ble_.authorized();
-  if (!bleOk && !mqtt_.connected()) {
+  // Only a control link may keep the drive alive. A telemetry-only link cannot.
+  if (!bleOk && !commandLink_.connected()) {
     drive_.stop();  // no control link at all
   }
   if (static_cast<uint32_t>(now - lastTelemetryMs_) >= board::TELEMETRY_PERIOD_MS) {
@@ -209,8 +238,9 @@ void RoverController::sendTelemetry(uint32_t nowMs) {
 }
 
 void RoverController::send(const String& message) {
-  // Telemetry sent ONLY via MQTT over WiFi
-  mqtt_.publish(message);
+  // Telemetry is publish-only and goes to the telemetry broker. The command
+  // broker has no publish rights and is never used for telemetry.
+  telemetryLink_.publish(message);
 }
 
 void RoverController::handleMqtt(const String& payload) {

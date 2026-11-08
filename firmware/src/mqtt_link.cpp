@@ -2,17 +2,12 @@
 
 #include <WiFi.h>
 
-#include "board_config.h"
 #include "secrets.h"
 
-MqttLink* MqttLink::self_ = nullptr;
+MqttLink* MqttLink::instances_[MqttLink::kMaxLinks] = {nullptr, nullptr};
 
-void MqttLink::begin(MessageHandler handler) {
-  handler_ = handler;
-  self_ = this;
-  const String base = String("drone/") + board::DRONE_ID;
-  commandTopic_ = base + "/command";
-  telemetryTopic_ = base + "/telemetry";
+void MqttLink::beginNetwork() {
+  if (WiFi.status() == WL_CONNECTED) return;
 
   Serial.println("[WiFi] Starting WiFi...");
   Serial.printf("[WiFi]   SSID : %s\n", secrets::WIFI_SSID);
@@ -21,7 +16,6 @@ void MqttLink::begin(MessageHandler handler) {
   WiFi.setTxPower(WIFI_POWER_15dBm);  // Smooth out RF current spikes for breadboard power
   WiFi.begin(secrets::WIFI_SSID, secrets::WIFI_PASSWORD);  // non-blocking
 
-  // Print WiFi connection progress
   Serial.print("[WiFi] Connecting");
   uint8_t attempts = 0;
   while (WiFi.status() != WL_CONNECTED && attempts < 20) {
@@ -29,40 +23,108 @@ void MqttLink::begin(MessageHandler handler) {
     Serial.print(".");
     attempts++;
   }
+  Serial.println();
+
   if (WiFi.status() == WL_CONNECTED) {
-    Serial.println();
     Serial.println("[WiFi] *** CONNECTED ***");
     Serial.printf("[WiFi]   IP Address : %s\n", WiFi.localIP().toString().c_str());
     Serial.printf("[WiFi]   Gateway    : %s\n", WiFi.gatewayIP().toString().c_str());
     Serial.printf("[WiFi]   RSSI       : %d dBm\n", WiFi.RSSI());
   } else {
-    Serial.println();
-    Serial.printf("[WiFi] *** FAILED to connect to '%s' — will retry in background ***\n", secrets::WIFI_SSID);
+    Serial.printf("[WiFi] *** FAILED to connect to '%s' — will retry in background ***\n",
+                  secrets::WIFI_SSID);
+  }
+}
+
+bool MqttLink::networkConnected() {
+  return WiFi.status() == WL_CONNECTED;
+}
+
+bool MqttLink::begin(const MqttEndpoint& endpoint, MessageHandler handler) {
+  // Release a previous slot if begin() is called twice on the same object.
+  if (slot_ >= 0 && slot_ < static_cast<int8_t>(kMaxLinks) && instances_[slot_] == this) {
+    instances_[slot_] = nullptr;
+  }
+  slot_ = -1;
+
+  for (uint8_t i = 0; i < kMaxLinks; ++i) {
+    if (instances_[i] == nullptr) {
+      slot_ = static_cast<int8_t>(i);
+      break;
+    }
+  }
+  if (slot_ < 0) {
+    Serial.println("[MQTT] *** no free link slot ***");
+    return false;
+  }
+  if (endpoint.host.length() == 0 || endpoint.topic.length() == 0) {
+    Serial.println("[MQTT] *** endpoint missing host or topic ***");
+    return false;
   }
 
-  Serial.printf("[MQTT] Server : %s:%d\n", secrets::MQTT_HOST, secrets::MQTT_PORT);
-  Serial.printf("[MQTT] Drone  : %s\n", board::DRONE_ID);
-  Serial.printf("[MQTT] Topics : cmd=%s  telem=%s\n", commandTopic_.c_str(), telemetryTopic_.c_str());
+  handler_ = handler;
+  host_ = endpoint.host;
+  port_ = endpoint.port;
+  user_ = endpoint.user;
+  pass_ = endpoint.pass;
+  clientId_ = endpoint.clientId;
+  topic_ = endpoint.topic;
+  availabilityTopic_ = endpoint.availabilityTopic;
+  publishEnabled_ = endpoint.publish;
+  subscribeEnabled_ = endpoint.subscribe;
+  lastAttemptMs_ = 0;
+  lastWifiStatus_ = -1;
 
-  tls_.setInsecure();  // same as ENISOLAR; pin the HiveMQ CA later for production
+  instances_[slot_] = this;
+  mqtt_.setCallback(slot_ == 0 ? dispatch0 : dispatch1);
+
+  tls_.setInsecure();  // same as before; pin the HiveMQ CA later for production
   tls_.setTimeout(3);  // seconds
-  mqtt_.setServer(secrets::MQTT_HOST, secrets::MQTT_PORT);
-  mqtt_.setCallback(onMessage);
+  mqtt_.setServer(host_.c_str(), port_);
   mqtt_.setBufferSize(512);
   mqtt_.setSocketTimeout(3);
+
+  Serial.printf("[MQTT] Link '%s' -> %s:%u  %s%s\n", clientId_.c_str(), host_.c_str(), port_,
+                publishEnabled_ ? "publish " : "", subscribeEnabled_ ? "subscribe" : "");
+  Serial.printf("[MQTT]   Topic : %s\n", topic_.c_str());
+  if (availabilityTopic_.length() > 0) {
+    Serial.printf("[MQTT]   LWT   : %s\n", availabilityTopic_.c_str());
+  }
+  return true;
 }
 
 bool MqttLink::tryConnect() {
-  const String clientId = String("rover_") + board::DRONE_ID;
-  Serial.printf("[MQTT] Connecting as '%s'...\n", clientId.c_str());
-  if (!mqtt_.connect(clientId.c_str(), secrets::MQTT_USER, secrets::MQTT_PASS)) {
+  if (!networkConnected()) return false;
+
+  Serial.printf("[MQTT] Connecting '%s'...\n", clientId_.c_str());
+
+  boolean ok = false;
+  if (publishEnabled_ && availabilityTopic_.length() > 0) {
+    // Register the last will first: if the rover dies, the broker marks it
+    // offline instead of leaving a stale "online" retained value.
+    ok = mqtt_.connect(clientId_.c_str(), user_.c_str(), pass_.c_str(),
+                       availabilityTopic_.c_str(), 1, true, "offline");
+  } else {
+    ok = mqtt_.connect(clientId_.c_str(), user_.c_str(), pass_.c_str());
+  }
+
+  if (!ok) {
     Serial.printf("[MQTT] *** CONNECT FAILED *** rc=%d\n", mqtt_.state());
     return false;
   }
-  mqtt_.subscribe(commandTopic_.c_str());
+
+  if (subscribeEnabled_) {
+    mqtt_.subscribe(topic_.c_str(), 1);
+    Serial.printf("[MQTT]   Subscribed to : %s\n", topic_.c_str());
+  }
+  if (publishEnabled_) {
+    Serial.printf("[MQTT]   Publishing to : %s\n", topic_.c_str());
+    if (availabilityTopic_.length() > 0) {
+      mqtt_.publish(availabilityTopic_.c_str(), "online", true);
+    }
+  }
+
   Serial.println("[MQTT] *** CONNECTED ***");
-  Serial.printf("[MQTT]   Subscribed to : %s\n", commandTopic_.c_str());
-  Serial.printf("[MQTT]   Publishing to : %s\n", telemetryTopic_.c_str());
   return true;
 }
 
@@ -71,38 +133,50 @@ void MqttLink::update(bool allowReconnect) {
     mqtt_.loop();
     return;
   }
-  // Log WiFi status changes
-  static wl_status_t lastWifiStatus = WL_IDLE_STATUS;
-  wl_status_t wifiStatus = WiFi.status();
-  if (wifiStatus != lastWifiStatus) {
-    Serial.printf("[WiFi] Status changed: %d -> %d  IP=%s\n",
-                  lastWifiStatus, wifiStatus, WiFi.localIP().toString().c_str());
-    lastWifiStatus = wifiStatus;
+
+  const int wifiStatus = static_cast<int>(WiFi.status());
+  if (wifiStatus != lastWifiStatus_) {
+    Serial.printf("[WiFi] Status changed: %d -> %d  IP=%s\n", lastWifiStatus_, wifiStatus,
+                  WiFi.localIP().toString().c_str());
+    lastWifiStatus_ = wifiStatus;
   }
+
   const uint32_t now = millis();
-  if (allowReconnect && WiFi.status() == WL_CONNECTED &&
+  if (allowReconnect && networkConnected() &&
       static_cast<uint32_t>(now - lastAttemptMs_) >= 5000) {
     lastAttemptMs_ = now;
     tryConnect();
   }
 }
 
-void MqttLink::publish(const String& message) {
-  if (mqtt_.connected()) {
-    Serial.printf("[MQTT] >>> PUB %s\n", message.c_str());
-    mqtt_.publish(telemetryTopic_.c_str(), message.c_str());
-  }
+bool MqttLink::publish(const String& message) {
+  if (!publishEnabled_ || !mqtt_.connected()) return false;
+  Serial.printf("[MQTT] >>> PUB %s\n", message.c_str());
+  return mqtt_.publish(topic_.c_str(), message.c_str());
 }
 
 bool MqttLink::connected() {
   return mqtt_.connected();
 }
 
-void MqttLink::onMessage(char* topic, uint8_t* payload, unsigned int length) {
-  if (self_ == nullptr || self_->handler_ == nullptr) return;
+void MqttLink::dispatch0(char* topic, uint8_t* payload, unsigned int length) {
+  dispatch(instances_[0], topic, payload, length);
+}
+
+void MqttLink::dispatch1(char* topic, uint8_t* payload, unsigned int length) {
+  dispatch(instances_[1], topic, payload, length);
+}
+
+void MqttLink::dispatch(MqttLink* link, char* topic, uint8_t* payload, unsigned int length) {
+  if (link != nullptr) link->onPayload(topic, payload, length);
+}
+
+void MqttLink::onPayload(char* topic, uint8_t* payload, unsigned int length) {
+  if (handler_ == nullptr) return;
+
   String msg;
   msg.reserve(length);
   for (unsigned int i = 0; i < length; i++) msg += static_cast<char>(payload[i]);
   Serial.printf("[MQTT] <<< RCV topic=%s  payload=%s\n", topic, msg.c_str());
-  self_->handler_(msg);
+  handler_(msg);
 }

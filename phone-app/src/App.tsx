@@ -30,6 +30,17 @@ export default function App() {
     if (state.connectionStatus === "connected") setTab("control");
   }, [state.connectionStatus]);
   const connected = state.connectionStatus === "connected";
+  const commandOnline = state.links.command;
+  const commandLabel = commandOnline
+    ? "CMD online"
+    : state.connectionStatus === "connecting"
+      ? "CMD connecting"
+      : "CMD offline";
+  const commandChip = commandOnline
+    ? "border-green-500/40 bg-green-950/40 text-green-400"
+    : state.connectionStatus === "connecting"
+      ? "border-amber-500/40 bg-amber-950/40 text-amber-300"
+      : "border-red-500/40 bg-red-950/40 text-red-400";
   const telemetryAge = state.telemetry ? formatAge(state.telemetry.ageMs, state.telemetry.receivedAt) : "—";
 
   if (tab === "control") {
@@ -70,6 +81,13 @@ export default function App() {
           </nav>
 
           <div className="flex items-center gap-2">
+            <div
+              className={`hidden items-center gap-1.5 rounded-full border px-3 py-1.5 text-[10px] font-semibold sm:flex ${commandChip}`}
+              title="Command MQTT link status"
+            >
+              <span className={`h-1.5 w-1.5 rounded-full ${commandOnline ? "bg-green-400" : "bg-current"}`} />
+              {commandLabel}
+            </div>
             <button
               onClick={() => setTab("connection")}
               className={`${glass} flex h-9 w-9 items-center justify-center rounded-full text-text-primary`}
@@ -132,7 +150,10 @@ export default function App() {
         </AnimatePresence>
 
         <div className="mt-6 text-center text-xs text-white/60">
-          Telemetry age: {telemetryAge} · Safety state: {state.safetyState}
+          Telemetry age: {telemetryAge} · Safety state: {state.safetyState} · Command MQTT:{" "}
+          <span className={commandOnline ? "text-green-400" : "text-red-400"}>
+            {commandOnline ? "online" : "offline"}
+          </span>
         </div>
       </main>
 

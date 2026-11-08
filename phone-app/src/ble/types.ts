@@ -1,5 +1,10 @@
 import type { ConnectionStatus } from "../protocol/types";
 
+export interface LinkStates {
+  telemetry: boolean;
+  command: boolean;
+}
+
 export interface BleAdapter {
   readonly id: string;
   isSupported(): boolean;
@@ -9,6 +14,7 @@ export interface BleAdapter {
   writeCommand(frame: string): Promise<void>;
   onStatus(listener: (raw: string, receivedAt: number) => void): () => void;
   onConnection(listener: (connected: boolean, authorized: boolean, receivedAt: number) => void): () => void;
+  onLinks(listener: (links: LinkStates) => void): () => void;
 }
 
 export type BleFactory = () => BleAdapter;

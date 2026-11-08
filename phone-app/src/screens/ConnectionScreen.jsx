@@ -3,9 +3,20 @@ import { readNumber, readText } from "../components/readings";
 
 const panel = "rounded-2xl border border-white/10 bg-white/[0.04] p-4";
 
+function linkTone(connected, connecting, errored) {
+  if (connected) return { dot: "bg-green-400", text: "Connected", textClass: "text-green-400" };
+  if (connecting) return { dot: "bg-amber-400", text: "Connecting…", textClass: "text-amber-300" };
+  if (errored) return { dot: "bg-red-500", text: "Error", textClass: "text-red-400" };
+  return { dot: "bg-red-500", text: "Disconnected", textClass: "text-red-400" };
+}
+
 export default function ConnectionScreen({ state, connected, connect, disconnect, toggleDemo, arm, disarm }) {
   const raw = state.telemetry?.raw ?? {};
   const battery = readNumber(raw, "BATTERY");
+  const connecting = state.connectionStatus === "connecting";
+  const errored = state.connectionStatus === "error";
+  const telemetryLink = linkTone(state.links.telemetry, connecting, errored);
+  const commandLink = linkTone(state.links.command, connecting, errored);
 
   return (
     <div className="space-y-4">
@@ -13,7 +24,7 @@ export default function ConnectionScreen({ state, connected, connect, disconnect
         <div className="flex items-center justify-between">
           <div>
             <div className="text-sm font-semibold">Connection</div>
-            <div className="text-[10px] text-white/50">MQTT Cloud Link (Wi-Fi / HiveMQ)</div>
+            <div className="text-[10px] text-white/50">Two MQTT links · telemetry + command</div>
           </div>
           <div className="flex items-center gap-2">
             <span className={`h-2.5 w-2.5 rounded-full ${connected ? "bg-green-400" : "bg-red-500"}`} />
@@ -21,10 +32,24 @@ export default function ConnectionScreen({ state, connected, connect, disconnect
           </div>
         </div>
 
-        <div className="mt-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+        <div className="mt-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-5">
           <div className="rounded-xl bg-white/5 p-3">
-            <div className="text-[10px] text-white/50">Link status</div>
+            <div className="text-[10px] text-white/50">Overall link</div>
             <div className="text-sm font-semibold">{state.connectionStatus}</div>
+          </div>
+          <div className="rounded-xl bg-white/5 p-3">
+            <div className="text-[10px] text-white/50">Telemetry MQTT</div>
+            <div className={`flex items-center gap-1.5 text-sm font-semibold ${telemetryLink.textClass}`}>
+              <span className={`h-2 w-2 rounded-full ${telemetryLink.dot}`} />
+              {telemetryLink.text}
+            </div>
+          </div>
+          <div className="rounded-xl bg-white/5 p-3">
+            <div className="text-[10px] text-white/50">Command MQTT</div>
+            <div className={`flex items-center gap-1.5 text-sm font-semibold ${commandLink.textClass}`}>
+              <span className={`h-2 w-2 rounded-full ${commandLink.dot}`} />
+              {commandLink.text}
+            </div>
           </div>
           <div className="rounded-xl bg-white/5 p-3">
             <div className="text-[10px] text-white/50">Authorization</div>
@@ -44,11 +69,12 @@ export default function ConnectionScreen({ state, connected, connect, disconnect
               {state.safetyState}
             </div>
           </div>
-          <div className="rounded-xl bg-white/5 p-3">
-            <div className="text-[10px] text-white/50">Telemetry</div>
-            <div className="text-sm font-semibold">{state.telemetry ? "Live" : "—"}</div>
-          </div>
         </div>
+
+        <p className="mt-3 text-[11px] text-white/50">
+          Motion requires the command MQTT link. Telemetry is read-only; losing it does not
+          stop the rover, but you should stop if you cannot see its state.
+        </p>
 
         <div className="mt-4 flex flex-wrap gap-2">
           <button

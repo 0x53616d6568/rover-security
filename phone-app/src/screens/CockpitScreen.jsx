@@ -3,7 +3,7 @@
  *
  * Implements the Rover_Cockpit 3D interface replacing the old control screen.
  * Takes the full viewport cleanly and bridges React BLE state <-> Cockpit iframe:
- *   React → iframe : CONNECTED, STATE, TELEMETRY
+ *   React → iframe : CONNECTED, LINKS, STATE, TELEMETRY
  *   iframe → React : ARM, DISARM, ESTOP, AXES, NAVIGATE, TOGGLE_CLASSIC
  */
 
@@ -21,6 +21,7 @@ export default function CockpitScreen({
   onNavigate,
 }) {
   const [viewMode, setViewMode] = useState("3d"); // "3d" | "classic"
+  const [hudVersion, setHudVersion] = useState(() => Date.now());
   const iframeRef = useRef(null);
 
   /** Send a message to the iframe safely */
@@ -32,8 +33,18 @@ export default function CockpitScreen({
 
   /* ── Push connection status whenever it changes ── */
   useEffect(() => {
-    send({ type: "CONNECTED", connected });
-  }, [connected, send]);
+    send({ type: "CONNECTED", connected, command: state.links.command });
+  }, [connected, state.links.command, send]);
+
+  /* ── Push per-link status (telemetry / command MQTT) ── */
+  useEffect(() => {
+    send({
+      type: "LINKS",
+      telemetry: state.links.telemetry,
+      command: state.links.command,
+      connectionStatus: state.connectionStatus,
+    });
+  }, [state.links.telemetry, state.links.command, state.connectionStatus, send]);
 
   /* ── Push arm / safety state whenever it changes ── */
   useEffect(() => {
@@ -55,7 +66,13 @@ export default function CockpitScreen({
 
   /* ── Re-send state once the iframe finishes loading ── */
   const onLoad = useCallback(() => {
-    send({ type: "CONNECTED", connected });
+    send({ type: "CONNECTED", connected, command: state.links.command });
+    send({
+      type: "LINKS",
+      telemetry: state.links.telemetry,
+      command: state.links.command,
+      connectionStatus: state.connectionStatus,
+    });
     send({ type: "STATE", armed: state.safetyState === "MANUAL" });
     if (state.telemetry?.raw) {
       send({
@@ -64,7 +81,24 @@ export default function CockpitScreen({
         rawString: state.telemetry.rawString || "",
       });
     }
-  }, [connected, state.safetyState, state.telemetry, send]);
+  }, [
+    connected,
+    state.links.telemetry,
+    state.links.command,
+    state.connectionStatus,
+    state.safetyState,
+    state.telemetry,
+    send,
+  ]);
+
+  /* ── Reload only the HUD iframe when cockpit.html changes (dev only) ── */
+  useEffect(() => {
+    const hot = import.meta.hot;
+    if (!hot) return undefined;
+    const reloadHud = () => setHudVersion(Date.now());
+    hot.on("cockpit-hud-update", reloadHud);
+    return () => hot.off("cockpit-hud-update", reloadHud);
+  }, []);
 
   /* ── Listen for commands coming back from the cockpit ── */
   useEffect(() => {
@@ -152,8 +186,9 @@ export default function CockpitScreen({
       </div>
 
       <iframe
+        key={hudVersion}
         ref={iframeRef}
-        src="/cockpit.html"
+        src={import.meta.env.DEV ? `/cockpit.html?v=${hudVersion}` : "/cockpit.html"}
         onLoad={onLoad}
         title="Rover Cockpit"
         className="h-full w-full border-0 block"

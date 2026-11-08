@@ -13,11 +13,11 @@ async function connectDemo() {
 }
 
 describe("useRover (demo transport)", () => {
-  it("reports Web Bluetooth as unsupported instead of offering fake control", async () => {
+  it("reports the MQTT transport and refuses to arm while disconnected", async () => {
     const { result } = renderHook(() => useRover());
 
-    expect(result.current.state.supported).toBe(false);
-    expect(result.current.state.supportMessage).toContain("Chromium");
+    expect(result.current.state.supported).toBe(true);
+    expect(result.current.state.supportMessage).toContain("MQTT");
 
     await act(async () => {
       await result.current.arm();
@@ -32,6 +32,7 @@ describe("useRover (demo transport)", () => {
 
     expect(result.current.state.connectionStatus).toBe("connected");
     expect(result.current.state.authorized).toBe(true);
+    expect(result.current.state.links).toEqual({ telemetry: true, command: true });
     expect(result.current.state.safetyState).toBe("DISARMED");
 
     await act(async () => {
@@ -75,6 +76,7 @@ describe("useRover (demo transport)", () => {
     });
     expect(result.current.state.safetyState).toBe("SAFE_STOP");
     expect(result.current.state.axes).toEqual({ forward: 0, turn: 0 });
+    expect(result.current.state.links).toEqual({ telemetry: false, command: false });
 
     const sequenceBeforeReconnect = result.current.state.lastSequence;
     await act(async () => {
