@@ -72,12 +72,40 @@ bool Drive::setAxes(float forward, float turn)
 {
   if (!configured_)
     return false;
-  const float left = clampAxis(forward + turn);
-  const float right = clampAxis(forward - turn);
+
+  float left = 0.0F;
+  float right = 0.0F;
+
+  // If turning in place (pure turn, low forward speed):
+  // 4-wheel pivot turn: Left and Right rotate in opposite directions.
+  if (fabsf(forward) < 0.10F && fabsf(turn) >= 0.08F)
+  {
+    left = turn;
+    right = -turn;
+  }
+  else
+  {
+    // Driving + steering: inside wheels slow down but never stall at 0.
+    // All 4 wheels remain active and powered through the turn.
+    left = forward + (turn * 0.60F);
+    right = forward - (turn * 0.60F);
+
+    const float maxMag = max(fabsf(left), fabsf(right));
+    if (maxMag > 1.0F)
+    {
+      left /= maxMag;
+      right /= maxMag;
+    }
+  }
+
+  // Right side motor inversion: compensates for 180-deg physical mounting
+  // so BOTH left and right spin forward together when forward > 0.
+  const float rightDrive = -right;
+
   digitalWrite(board::LEFT_EN_PIN, HIGH);
   digitalWrite(board::RIGHT_EN_PIN, HIGH);
   setSide(board::PWM_CH_LEFT_R, board::PWM_CH_LEFT_L, left);
-  setSide(board::PWM_CH_RIGHT_R, board::PWM_CH_RIGHT_L, right);
+  setSide(board::PWM_CH_RIGHT_R, board::PWM_CH_RIGHT_L, rightDrive);
   return true;
 }
 
