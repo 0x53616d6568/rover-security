@@ -56,6 +56,18 @@ export class DemoAdapter implements BleAdapter {
       return token.trim() !== "" && Number.isFinite(parsed) ? parsed : null;
     };
 
+    if (parts[0] === "WIFI") {
+      const ssid = (parts[1] ?? "").trim();
+      const password = (parts[2] ?? "").trim();
+      if (parts.length !== 3 || !ssid || !password) {
+        this.reject("WIFI_REJECT");
+        return;
+      }
+      this.safetyState = "DISARMED";
+      this.emit(`STATE=DISARMED;EVENT=WIFI_UPDATED;SEQ=${this.lastSequence};VALID=1;SENSOR_DATA=SIMULATED;AGE_MS=0;GPS=Tunis, Tunisia;GPS_VALIDITY=simulated`);
+      return;
+    }
+
     if (parts.length !== 7 || parts[0] !== "CMD" || parts[1] !== "1") {
       this.reject("REJECT_FORMAT");
       return;

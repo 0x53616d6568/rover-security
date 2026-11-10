@@ -84,6 +84,13 @@ sending motion updates when the control is released, the link is lost, the
 rover reports a fault, or the app is backgrounded. A phone STOP is not a
 replacement for the hardware cut-off.
 
+It can also send the bounded network credential initialization frame over the
+same command link (BLE or MQTT command broker):
+
+```text
+WIFI,<ssid>,<password>
+```
+
 ### Telemetry
 
 Every displayed measurement must preserve the rover's unit, validity, and

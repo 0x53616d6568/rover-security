@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { clampAxis, encodeCommand, isSafetyState } from "./command";
+import { clampAxis, encodeCommand, encodeWifi, isSafetyState } from "./command";
 
 describe("clampAxis", () => {
   it("clamps values into the firmware-accepted range", () => {
@@ -61,6 +61,25 @@ describe("encodeCommand", () => {
     expect(
       encodeCommand({ sequence: 12.9, arm: false, forward: 0, turn: 0, stop: true }),
     ).toBe("CMD,1,12,0,0.000,0.000,1");
+  });
+});
+
+describe("encodeWifi", () => {
+  it("emits the firmware WIFI frame layout", () => {
+    expect(encodeWifi("HomeNet", "s3cret!")).toBe("WIFI,HomeNet,s3cret!");
+  });
+
+  it("trims surrounding whitespace from ssid and password", () => {
+    expect(encodeWifi("  HomeNet  ", "  s3cret!  ")).toBe("WIFI,HomeNet,s3cret!");
+  });
+
+  it("rejects empty ssid or password", () => {
+    expect(() => encodeWifi("   ", "s3cret!")).toThrow("non-empty");
+    expect(() => encodeWifi("HomeNet", "  ")).toThrow("non-empty");
+  });
+
+  it("rejects frames that exceed the firmware BLE frame limit", () => {
+    expect(() => encodeWifi("A".repeat(40), "B".repeat(40))).toThrow("64-byte");
   });
 });
 

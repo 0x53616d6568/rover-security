@@ -1,7 +1,10 @@
+import { useState } from "react";
 import { Battery, Signal, Wifi } from "lucide-react";
 import { readNumber, readText } from "../components/readings";
 
 const panel = "rounded-2xl border border-white/10 bg-white/[0.04] p-4";
+const inputClass =
+  "w-full rounded-xl border border-white/10 bg-white/5 px-3 py-2 text-xs text-text-primary placeholder:text-white/30 focus:border-green-400/50 focus:outline-none";
 
 function linkTone(connected, connecting, errored) {
   if (connected) return { dot: "bg-green-400", text: "Connected", textClass: "text-green-400" };
@@ -10,7 +13,28 @@ function linkTone(connected, connecting, errored) {
   return { dot: "bg-red-500", text: "Disconnected", textClass: "text-red-400" };
 }
 
-export default function ConnectionScreen({ state, connected, connect, disconnect, toggleDemo, arm, disarm }) {
+export default function ConnectionScreen({ state, connected, connect, disconnect, toggleDemo, arm, disarm, sendWifi }) {
+  const [wifiSsid, setWifiSsid] = useState("");
+  const [wifiPassword, setWifiPassword] = useState("");
+  const [wifiBusy, setWifiBusy] = useState(false);
+  const [wifiError, setWifiError] = useState("");
+
+  const sendWifiCredentials = async () => {
+    if (!wifiSsid.trim() || !wifiPassword) {
+      setWifiError("Enter both the WiFi SSID and password.");
+      return;
+    }
+    setWifiBusy(true);
+    setWifiError("");
+    try {
+      await sendWifi(wifiSsid, wifiPassword);
+    } catch (error) {
+      setWifiError(error instanceof Error ? error.message : "WiFi init failed.");
+    } finally {
+      setWifiBusy(false);
+    }
+  };
+
   const raw = state.telemetry?.raw ?? {};
   const battery = readNumber(raw, "BATTERY");
   const connecting = state.connectionStatus === "connecting";
@@ -101,6 +125,40 @@ export default function ConnectionScreen({ state, connected, connect, disconnect
           >
             {state.safetyState === "MANUAL" ? "Disarm" : "Arm → MANUAL"}
           </button>
+        </div>
+
+        <div className={`${panel} text-text-primary`}>
+          <div className="text-sm font-semibold">WiFi link initialization</div>
+          <p className="mt-2 text-xs text-white/60">
+            Send a BLE command frame to initialize the WiFi credentials the rover stores and connects with.
+            The ESP32 persists them and rejoins the network; the rover drops motion authority until re-armed.
+          </p>
+          <div className="mt-3 grid gap-2 sm:grid-cols-2">
+            <input
+              value={wifiSsid}
+              onChange={(event) => setWifiSsid(event.target.value)}
+              placeholder="Network SSID"
+              className={inputClass}
+            />
+            <input
+              type="password"
+              value={wifiPassword}
+              onChange={(event) => setWifiPassword(event.target.value)}
+              placeholder="Network password"
+              className={inputClass}
+            />
+          </div>
+          <div className="mt-3 flex items-center gap-3">
+            <button
+              onClick={() => void sendWifiCredentials()}
+              disabled={wifiBusy || !connected}
+              className="rounded-full bg-green-400/90 px-4 py-2 text-xs font-semibold text-deep disabled:opacity-40"
+            >
+              {wifiBusy ? "Sending…" : "Send WiFi init"}
+            </button>
+            {!connected && <span className="text-[11px] text-white/50">Connect the rover link first.</span>}
+          </div>
+          {wifiError && <p className="mt-2 text-xs text-red-300">{wifiError}</p>}
         </div>
 
         {state.connectionError && (

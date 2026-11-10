@@ -63,6 +63,19 @@ describe("useRover (demo transport)", () => {
     unmount();
   });
 
+  it("sends a WIFI init frame through the active adapter", async () => {
+    const { result, unmount } = await connectDemo();
+
+    await act(async () => {
+      await result.current.sendWifi("HomeNet", "s3cret!");
+    });
+
+    expect(result.current.state.safetyState).toBe("DISARMED");
+    expect(result.current.state.events[0]?.message).toContain("WiFi init sent");
+
+    unmount();
+  });
+
   it("does not auto-resume after reconnect", async () => {
     const { result, unmount } = await connectDemo();
 

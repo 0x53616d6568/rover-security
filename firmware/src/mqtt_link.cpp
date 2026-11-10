@@ -1,20 +1,68 @@
 #include "mqtt_link.h"
 
+#include <Preferences.h>
 #include <WiFi.h>
 
 #include "secrets.h"
 
 MqttLink* MqttLink::instances_[MqttLink::kMaxLinks] = {nullptr, nullptr};
 
+String MqttLink::savedSsid_;
+String MqttLink::savedPassword_;
+bool MqttLink::savedCredentialsValid_ = false;
+
+void MqttLink::saveNetworkCredentials(const String& ssid, const String& password) {
+  savedSsid_ = ssid;
+  savedPassword_ = password;
+  savedCredentialsValid_ = true;
+
+  // Persist across reboots so a flashed rover can rejoin its network without a
+  // BLE/MQTT credential push. Preferences lives in the ESP32 NVS partition.
+  Preferences prefs;
+  if (prefs.begin("rover_wifi", false)) {
+    prefs.putString("ssid", ssid);
+    prefs.putString("password", password);
+    prefs.end();
+  }
+
+  Serial.printf("[WIFI] Credentials saved — SSID='%s' (password stored)\n", ssid.c_str());
+}
+
 void MqttLink::beginNetwork() {
+  String ssid = String(secrets::WIFI_SSID);
+  String password = String(secrets::WIFI_PASSWORD);
+
+  Preferences prefs;
+  if (prefs.begin("rover_wifi", false)) {
+    if (prefs.isKey("ssid")) {
+      ssid = prefs.getString("ssid", String(""));
+      password = prefs.getString("password", String(""));
+    }
+    prefs.end();
+  }
+
+  startNetwork(ssid, password);
+}
+
+void MqttLink::restartNetwork() {
+  if (!savedCredentialsValid_ || savedSsid_.length() == 0 || savedPassword_.length() == 0) {
+    Serial.println("[WIFI] *** RESTART REJECTED — no credentials stored ***");
+    return;
+  }
+
+  Serial.println("[WIFI] *** RESTARTING NETWORK with updated credentials ***");
+  startNetwork(savedSsid_, savedPassword_);
+}
+
+void MqttLink::startNetwork(const String& ssid, const String& password) {
   if (WiFi.status() == WL_CONNECTED) return;
 
   Serial.println("[WiFi] Starting WiFi...");
-  Serial.printf("[WiFi]   SSID : %s\n", secrets::WIFI_SSID);
+  Serial.printf("[WiFi]   SSID : %s\n", ssid.c_str());
   WiFi.mode(WIFI_STA);
   WiFi.setAutoReconnect(true);
   WiFi.setTxPower(WIFI_POWER_15dBm);  // Smooth out RF current spikes for breadboard power
-  WiFi.begin(secrets::WIFI_SSID, secrets::WIFI_PASSWORD);  // non-blocking
+  WiFi.begin(ssid.c_str(), password.c_str());  // non-blocking
 
   Serial.print("[WiFi] Connecting");
   uint8_t attempts = 0;
@@ -31,8 +79,15 @@ void MqttLink::beginNetwork() {
     Serial.printf("[WiFi]   Gateway    : %s\n", WiFi.gatewayIP().toString().c_str());
     Serial.printf("[WiFi]   RSSI       : %d dBm\n", WiFi.RSSI());
   } else {
-    Serial.printf("[WiFi] *** FAILED to connect to '%s' — will retry in background ***\n",
-                  secrets::WIFI_SSID);
+    Serial.printf("[WiFi] *** FAILED to connect to '%s' — will retry in background ***\n", ssid.c_str());
+  }
+
+  // Drop per-link retry bookkeeping so both MQTT links retry against the new AP.
+  for (MqttLink* link : instances_) {
+    if (link != nullptr) {
+      link->lastAttemptMs_ = 0;
+      link->lastWifiStatus_ = -1;
+    }
   }
 }
 

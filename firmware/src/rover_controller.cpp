@@ -258,6 +258,11 @@ bool RoverController::acceptFrame(const String& rawFrame, uint32_t nowMs) {
 
   String frame = rawFrame;
   frame.trim();
+  if (frame.startsWith("WIFI,")) {
+    // Network credential initialization: WIFI,<ssid>,<password>. Handled before
+    // the command parser so it never consumes a drive-command sequence number.
+    return handleWifiFrame(frame, nowMs);
+  }
   if (!frame.startsWith("CMD,")) {
     Serial.printf("[CMD] REJECT_FORMAT: missing 'CMD,' prefix\n");
     forceStop(SafetyState::SAFE_STOP, "REJECT_FORMAT");
@@ -331,6 +336,39 @@ bool RoverController::acceptFrame(const String& rawFrame, uint32_t nowMs) {
   currentTurn_ = turn;
   safetyState_ = SafetyState::MANUAL;
   report("ACCEPTED");
+  return true;
+}
+
+bool RoverController::handleWifiFrame(const String& frame, uint32_t nowMs) {
+  // Frame format: WIFI,<ssid>,<password>
+  const int separator = frame.indexOf(',', 5);  // first comma after "WIFI,"
+  if (separator < 0) {
+    Serial.println("[WIFI] REJECT_FORMAT: expected WIFI,<ssid>,<password>");
+    forceStop(SafetyState::SAFE_STOP, "WIFI_REJECT");
+    return false;
+  }
+  const String ssid = frame.substring(5, separator);
+  String password = frame.substring(separator + 1);
+  password.trim();
+  if (ssid.length() == 0 || password.length() == 0) {
+    Serial.printf("[WIFI] REJECT_VALUE: empty ssid='%s' passLen=%d\n", ssid.c_str(), password.length());
+    forceStop(SafetyState::SAFE_STOP, "WIFI_REJECT");
+    return false;
+  }
+
+  // Never accept credential changes while a drive command could be in flight.
+  if (safetyState_ == SafetyState::MANUAL || safetyState_ == SafetyState::FAULT) {
+    Serial.println("[WIFI] REJECT — credential change refused while drive authority is active");
+    forceStop(SafetyState::SAFE_STOP, "WIFI_DURING_CONTROL");
+    return false;
+  }
+
+  Serial.printf("[WIFI] Init command: SSID='%s' PASS_LEN=%d\n", ssid.c_str(), password.length());
+  MqttLink::saveNetworkCredentials(ssid, password);
+  MqttLink::restartNetwork();
+  // The radio is rejoining a network we just changed: drop motion authority
+  // until the operator explicitly arms again on the new link.
+  forceStop(SafetyState::DISARMED, "WIFI_UPDATED");
   return true;
 }
 

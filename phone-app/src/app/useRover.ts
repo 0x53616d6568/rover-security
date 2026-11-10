@@ -2,7 +2,7 @@ import { useCallback, useEffect, useRef, useReducer } from "react";
 
 import { DemoAdapter, MqttAdapter } from "../ble";
 import type { BleAdapter } from "../ble/types";
-import { clampAxis, encodeCommand } from "../protocol/command";
+import { clampAxis, encodeCommand, encodeWifi } from "../protocol/command";
 import { parseTelemetry } from "../protocol/telemetry";
 import type { CommandParams } from "../protocol/command";
 import {
@@ -122,6 +122,25 @@ export function useRover() {
     }
   }, []);
 
+  const sendWifi = useCallback(async (ssid: string, password: string) => {
+    const adapter = adapterRef.current;
+    if (!adapter) return;
+    const frame = encodeWifi(ssid, password);
+    try {
+      await adapter.writeCommand(frame);
+      dispatch({
+        type: "PUSH_EVENT",
+        event: createEvent(
+          "info",
+          `WiFi init sent for network "${ssid.trim()}". The rover will store and rejoin it.`,
+        ),
+      });
+    } catch (error) {
+      const message = error instanceof Error ? error.message : "WiFi init failed.";
+      dispatch({ type: "CONNECTION_ERROR", message });
+    }
+  }, []);
+
   const arm = useCallback(async () => {
     const current = stateRef.current;
     if (!current.supported || current.connectionStatus !== "connected" || current.safetyState === "FAULT") {
@@ -216,5 +235,6 @@ export function useRover() {
     setAxes,
     toggleDemo,
     clearError,
+    sendWifi,
   };
 }

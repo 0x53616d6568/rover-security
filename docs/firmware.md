@@ -79,6 +79,14 @@ CMD,<version>,<sequence>,<arm>,<forward>,<turn>,<stop>
 
 `version` is `1`, `sequence` must increase, `arm` and `stop` are `0` or `1`, and both axes must be between `-1.0` and `1.0`. A valid example is `CMD,1,7,1,0.25,-0.10,0`. State notifications use semicolon-delimited fields and always include the safety state; sensor data is currently explicitly marked unavailable.
 
+The command characteristic also accepts a network credential initialization frame:
+
+```text
+WIFI,<ssid>,<password>
+```
+
+The ESP32 persists the credentials and restarts the WiFi/MQTT links with them; the frame is refused while the drive authority is active. A valid example is `WIFI,HomeNet,s3cret!`.
+
 Before a real build, set the verified PWM/direction/enable pins and the paired phone BLE address in [`board_config.h`](../firmware/include/board_config.h). An empty address rejects every BLE central, and unset motor pins keep the drive unavailable. The current drive adapter assumes one PWM and one direction signal per side; adapt it only after the actual driver interface is reviewed.
 
 ## Local build

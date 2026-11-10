@@ -41,3 +41,20 @@ export function isSafetyState(value: string): value is SafetyState {
     value === "FAULT"
   );
 }
+
+// BLE frames are bounded ASCII strings (firmware BLE_MAX_FRAME_LENGTH = 64).
+export const MAX_FRAME_LENGTH = 64;
+
+// Network credential initialization frame: WIFI,<ssid>,<password>
+export function encodeWifi(ssid: string, password: string): string {
+  const cleanSsid = ssid.trim();
+  const cleanPassword = password.trim();
+  if (!cleanSsid || !cleanPassword) {
+    throw new Error("WiFi init requires a non-empty SSID and password.");
+  }
+  const frame = ["WIFI", cleanSsid, cleanPassword].join(",");
+  if (frame.length > MAX_FRAME_LENGTH) {
+    throw new Error(`WiFi init frame exceeds the ${MAX_FRAME_LENGTH}-byte frame limit.`);
+  }
+  return frame;
+}

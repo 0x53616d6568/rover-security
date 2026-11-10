@@ -120,6 +120,26 @@ describe("DemoAdapter", () => {
     output.dispose();
   });
 
+  it("accepts a WIFI init frame and drops to DISARMED", async () => {
+    const output = collect(adapter);
+    await adapter.connect();
+
+    await adapter.writeCommand("WIFI,HomeNet,s3cret!");
+    expect(output.latest()?.lastEvent).toBe("WIFI_UPDATED");
+    expect(output.latest()?.safetyState).toBe("DISARMED");
+    output.dispose();
+  });
+
+  it("fails safe on a malformed WIFI frame", async () => {
+    const output = collect(adapter);
+    await adapter.connect();
+
+    await adapter.writeCommand("WIFI,");
+    expect(output.latest()?.lastEvent).toBe("WIFI_REJECT");
+    expect(output.latest()?.safetyState).toBe("SAFE_STOP");
+    output.dispose();
+  });
+
   it("refuses to write while disconnected", async () => {
     await expect(adapter.writeCommand("CMD,1,1,1,0,0,0")).rejects.toThrow("Not connected");
   });

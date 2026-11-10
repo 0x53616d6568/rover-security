@@ -23,7 +23,7 @@ const tabs = [
 ];
 
 export default function App() {
-  const { state, connect, disconnect, arm, disarm, stop, setAxes, toggleDemo } = useRover();
+  const { state, connect, disconnect, arm, disarm, stop, setAxes, toggleDemo, sendWifi } = useRover();
   const [tab, setTab] = useState("welcome");
 
   useEffect(() => {
@@ -116,6 +116,7 @@ export default function App() {
                 toggleDemo={toggleDemo}
                 arm={arm}
                 disarm={disarm}
+                sendWifi={sendWifi}
               />
             </motion.div>
           )}

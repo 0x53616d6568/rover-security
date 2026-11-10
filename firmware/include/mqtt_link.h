@@ -29,7 +29,13 @@ class MqttLink {
   using MessageHandler = void (*)(const String& payload);
 
   // Bring up the shared WiFi STA connection once, before beginning any link.
+  // Uses the persisted credentials when present, otherwise the compiled-in ones.
   static void beginNetwork();
+  // Store WiFi credentials for the next network bring-up and persist them.
+  static void saveNetworkCredentials(const String& ssid, const String& password);
+  // Re-initialize the WiFi radio with the stored credentials and let the live
+  // MQTT links reconnect to the network they describe.
+  static void restartNetwork();
   static bool networkConnected();
 
   bool begin(const MqttEndpoint& endpoint, MessageHandler handler = nullptr);
@@ -50,6 +56,14 @@ class MqttLink {
   void onPayload(char* topic, uint8_t* payload, unsigned int length);
 
   bool tryConnect();
+
+  // Shared WiFi bring-up with explicit credentials (boot + WiFi init paths).
+  static void startNetwork(const String& ssid, const String& password);
+
+  // Persisted WiFi credentials (written by saveNetworkCredentials, read at boot).
+  static String savedSsid_;
+  static String savedPassword_;
+  static bool savedCredentialsValid_;
 
   WiFiClientSecure tls_;
   PubSubClient mqtt_{tls_};

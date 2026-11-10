@@ -118,6 +118,21 @@ CMD,1,42,1,0.25,-0.10,0
 - `forward` and `turn` are bounded to `[-1.0, 1.0]`
 - maximum payload length: `BLE_MAX_FRAME_LENGTH` (64 bytes)
 
+**Network credential initialization** (`WIFI` frame, accepted on both the
+command broker path and the BLE command characteristic):
+
+```text
+WIFI,<ssid>,<password>
+WIFI,MyHomeWiFi,s3cret!
+```
+
+- The firmware handles `WIFI,` frames before the `CMD,` parser, so they never
+  consume a drive-command sequence number.
+- The ESP32 stores the credentials (Preferences/NVS) and re-initializes the
+  WiFi radio with them; both MQTT links then reconnect to the new network.
+- The frame is refused while the rover is in `MANUAL` or `FAULT`, and a
+  successful update drops motion authority back to `DISARMED` until re-armed.
+
 **Telemetry** (`rover/1/telemetry`):
 
 ```text

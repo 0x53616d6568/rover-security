@@ -16,10 +16,11 @@ class RoverController {
 
  private:
   bool acceptFrame(const String& rawFrame, uint32_t nowMs);
+  bool handleWifiFrame(const String& frame, uint32_t nowMs);
   void onConnection(bool connected, bool authorized, uint32_t nowMs);
   void report(const String& event);
-  void sendTelemetry(uint32_t nowMs);
   void forceStop(SafetyState newState, const String& event);
+  void sendTelemetry(uint32_t nowMs);
   void send(const String& message);  // telemetry publish (telemetry broker only)
   static void handleMqtt(const String& payload);
 
