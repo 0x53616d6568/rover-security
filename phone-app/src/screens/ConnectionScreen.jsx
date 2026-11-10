@@ -127,7 +127,7 @@ export default function ConnectionScreen({ state, connected, connect, disconnect
           </button>
         </div>
 
-        <div className={`${panel} text-text-primary`}>
+        <div className={`${panel} text-text-primary mt-4`}>
           <div className="text-sm font-semibold">WiFi link initialization</div>
           <p className="mt-2 text-xs text-white/60">
             Send a BLE command frame to initialize the WiFi credentials the rover stores and connects with.
