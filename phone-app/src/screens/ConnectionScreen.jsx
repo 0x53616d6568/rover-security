@@ -138,14 +138,14 @@ export default function ConnectionScreen({ state, connected, connect, disconnect
               value={wifiSsid}
               onChange={(event) => setWifiSsid(event.target.value)}
               placeholder="Network SSID"
-              className={inputClass}
+              className={`${inputClass} min-w-0`}
             />
             <input
               type="password"
               value={wifiPassword}
               onChange={(event) => setWifiPassword(event.target.value)}
               placeholder="Network password"
-              className={inputClass}
+              className={`${inputClass} min-w-0`}
             />
           </div>
           <div className="mt-3 flex items-center gap-3">

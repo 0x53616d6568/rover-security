@@ -61,6 +61,7 @@ export function useRover() {
       dispatch({ type: "CONNECTION_CHANGED", connected, authorized, at: receivedAt });
     });
     const unsubLinks = adapter.onLinks((links) => {
+      console.info("[useRover] links changed", links);
       dispatch({ type: "LINKS_CHANGED", links });
     });
 
@@ -90,6 +91,7 @@ export function useRover() {
     // Ignore repeat clicks while the browser chooser/GATT handshake is running.
     if (stateRef.current.connectionStatus === "connecting") return;
     dispatch({ type: "SET_CONNECTION_STATUS", status: "connecting" });
+    console.info("[useRover] connect: adapter", adapter.id);
     try {
       await adapter.connect();
     } catch (error) {
@@ -101,6 +103,7 @@ export function useRover() {
   const disconnect = useCallback(async () => {
     const adapter = adapterRef.current;
     if (!adapter) return;
+    console.info("[useRover] disconnect: adapter", adapter.id);
     try {
       await adapter.disconnect();
     } catch (error) {
@@ -126,6 +129,7 @@ export function useRover() {
     const adapter = adapterRef.current;
     if (!adapter) return;
     const frame = encodeWifi(ssid, password);
+    console.info("[useRover] sendWifi frame", frame);
     try {
       await adapter.writeCommand(frame);
       dispatch({
