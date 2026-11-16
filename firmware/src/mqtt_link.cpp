@@ -32,12 +32,12 @@ void MqttLink::beginNetwork() {
   String ssid = String(secrets::WIFI_SSID);
   String password = String(secrets::WIFI_PASSWORD);
 
+  // Overwrite/clear stale NVS credentials so secrets.h always takes precedence
   Preferences prefs;
   if (prefs.begin("rover_wifi", false)) {
-    if (prefs.isKey("ssid")) {
-      ssid = prefs.getString("ssid", String(""));
-      password = prefs.getString("password", String(""));
-    }
+    prefs.clear();
+    prefs.putString("ssid", ssid);
+    prefs.putString("password", password);
     prefs.end();
   }
 

@@ -15,7 +15,7 @@ class RoverController {
   void update();
 
  private:
-  bool acceptFrame(const String& rawFrame, uint32_t nowMs);
+  bool acceptFrame(const String& rawFrame, uint32_t nowMs, const char* source = "MQTT", const char* senderMac = nullptr);
   bool handleWifiFrame(const String& frame, uint32_t nowMs);
   void onConnection(bool connected, bool authorized, uint32_t nowMs);
   void report(const String& event);
@@ -24,7 +24,7 @@ class RoverController {
   void send(const String& message);  // telemetry publish (telemetry broker only)
   static void handleMqtt(const String& payload);
 
-  static bool handleFrame(const String& frame, uint32_t nowMs);
+  static bool handleFrame(const String& frame, uint32_t nowMs, const char* senderMac);
   static void handleConnection(bool connected, bool authorized, uint32_t nowMs);
 
   static RoverController* instance_;
@@ -47,4 +47,6 @@ class RoverController {
   float currentSpeed_ = 0.0f;
   float currentHeading_ = 0.0f;
   uint32_t lastSpeedUpdateMs_ = 0;
+  bool bleLogOnly_ = true;
+  bool buttonPressedHandled_ = false;
 };

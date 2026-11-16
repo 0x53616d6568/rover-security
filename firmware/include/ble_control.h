@@ -4,7 +4,7 @@
 
 class BleControl {
  public:
-  using FrameHandler = bool (*)(const String& frame, uint32_t nowMs);
+  using FrameHandler = bool (*)(const String& frame, uint32_t nowMs, const char* senderMac);
   using ConnectionHandler = void (*)(bool connected, bool authorized, uint32_t nowMs);
 
   void begin(FrameHandler frameHandler, ConnectionHandler connectionHandler);

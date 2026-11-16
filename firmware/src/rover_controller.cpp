@@ -93,20 +93,55 @@ void RoverController::begin() {
   safetyState_ = SafetyState::DISARMED;
   lastCommandMs_ = millis();
 
+  pinMode(0, INPUT_PULLUP);  // BOOT button on GPIO 0
+
   Serial.println("[BLE] Initializing BLE...");
   ble_.begin(handleFrame, handleConnection);
 
   const char* readyMsg = drive_.isConfigured() ? "READY" : "MOTOR_PINS_UNSET";
   Serial.printf("[ROVER] Initial state: %s\n", readyMsg);
-  Serial.println("========================================");
-  Serial.println("   BOOT COMPLETE — waiting for commands");
-  Serial.println("========================================");
+  Serial.println("================================================================================");
+  Serial.println(">>> 🔴 BLE ATTACK & INTERACTION MONITOR ACTIVE (TELEMETRY LOGS MUTED) 🔴 <<<");
+  Serial.printf ("    Device Name  : %s\n", board::BLE_DEVICE_NAME);
+  Serial.printf ("    Command UUID : %s\n", board::BLE_COMMAND_UUID);
+  Serial.printf ("    Status UUID  : %s\n", board::BLE_STATUS_UUID);
+  Serial.println("    Waiting for incoming BLE Central connection and GATT writes...");
+  Serial.println("================================================================================");
   report(readyMsg);
 }
 
 void RoverController::update() {
   const uint32_t now = millis();
   esp_task_wdt_reset();
+
+  // --- Check BOOT button (GPIO 0) to toggle BLE-only logging vs Telemetry logging ---
+  static bool lastButtonState = HIGH;
+  static uint32_t lastDebounceMs = 0;
+  const bool rawButton = digitalRead(0);
+  if (rawButton != lastButtonState) {
+    lastDebounceMs = now;
+    lastButtonState = rawButton;
+  }
+  if ((now - lastDebounceMs) > 50) {
+    if (rawButton == LOW && !buttonPressedHandled_) {
+      buttonPressedHandled_ = true;
+      bleLogOnly_ = !bleLogOnly_;
+      Serial.println();
+      Serial.println("************************************************************");
+      if (bleLogOnly_) {
+        Serial.println(">>> [LOGGING MODE] BOOT BUTTON: LOGGING BLE INTERACTIONS ONLY <<<");
+        Serial.println(">>> (Telemetry serial output SILENCED. Listening for BLE...)");
+      } else {
+        Serial.println(">>> [LOGGING MODE] BOOT BUTTON: NORMAL TELEMETRY LOGGING <<<");
+        Serial.println(">>> (Telemetry serial stream RESUMED)");
+      }
+      Serial.println("************************************************************");
+      Serial.println();
+    } else if (rawButton == HIGH) {
+      buttonPressedHandled_ = false;
+    }
+  }
+
   gps_.update();
 
   // Motion physics on the ESP32: reflects actual commanded drive
@@ -233,7 +268,12 @@ void RoverController::sendTelemetry(uint32_t nowMs) {
   // --- Uptime ---
   msg += ";UPTIME_S=" + String(nowMs / 1000);
 
-  Serial.printf("[TELEM] >> %s\n", msg.c_str());
+  // Print 1-second snapshot to Serial (preventing UART saturation) while publishing 10Hz to MQTT:
+  static uint32_t lastSerialLogMs = 0;
+  if (nowMs - lastSerialLogMs >= 1000) {
+    lastSerialLogMs = nowMs;
+    Serial.printf("[TELEM] >> %s\n", msg.c_str());
+  }
   send(msg);
 }
 
@@ -247,11 +287,15 @@ void RoverController::handleMqtt(const String& payload) {
   if (instance_ != nullptr) instance_->acceptFrame(payload, millis());
 }
 
-bool RoverController::acceptFrame(const String& rawFrame, uint32_t nowMs) {
-  Serial.printf("[CMD] Raw frame received (%d bytes): %s\n", rawFrame.length(), rawFrame.c_str());
+bool RoverController::acceptFrame(const String& rawFrame, uint32_t nowMs, const char* source, const char* senderMac) {
+  const bool isBle = (source != nullptr && strcmp(source, "BLE") == 0);
+  const char* src = source ? source : "MQTT";
+  Serial.printf("[%s CMD] Frame received (%d bytes): %s%s%s\n",
+                src, rawFrame.length(), rawFrame.c_str(),
+                senderMac ? " | From: " : "", senderMac ? senderMac : "");
 
   if (rawFrame.length() == 0 || rawFrame.length() > board::BLE_MAX_FRAME_LENGTH) {
-    Serial.printf("[CMD] REJECT_LENGTH: len=%d max=%d\n", rawFrame.length(), board::BLE_MAX_FRAME_LENGTH);
+    Serial.printf("[%s SECURITY REJECT] REJECT_LENGTH: len=%d max=%d\n", source ? source : "CMD", rawFrame.length(), board::BLE_MAX_FRAME_LENGTH);
     forceStop(SafetyState::SAFE_STOP, "REJECT_LENGTH");
     return false;
   }
@@ -264,7 +308,7 @@ bool RoverController::acceptFrame(const String& rawFrame, uint32_t nowMs) {
     return handleWifiFrame(frame, nowMs);
   }
   if (!frame.startsWith("CMD,")) {
-    Serial.printf("[CMD] REJECT_FORMAT: missing 'CMD,' prefix\n");
+    Serial.printf("[%s SECURITY REJECT] REJECT_FORMAT: missing 'CMD,' prefix (Frame: %s)\n", source ? source : "CMD", frame.c_str());
     forceStop(SafetyState::SAFE_STOP, "REJECT_FORMAT");
     return false;
   }
@@ -279,7 +323,7 @@ bool RoverController::acceptFrame(const String& rawFrame, uint32_t nowMs) {
     start = end + 1;
   }
   if (fieldCount != 6 || start <= frame.length()) {
-    Serial.printf("[CMD] REJECT_FORMAT: got %d fields, need 6\n", fieldCount);
+    Serial.printf("[%s SECURITY REJECT] REJECT_FORMAT: got %d fields, need 6\n", source ? source : "CMD", fieldCount);
     forceStop(SafetyState::SAFE_STOP, "REJECT_FORMAT");
     return false;
   }
@@ -295,18 +339,23 @@ bool RoverController::acceptFrame(const String& rawFrame, uint32_t nowMs) {
       !parseFloat(fields[3], forward) || !parseFloat(fields[4], turn) ||
       !parseUnsigned(fields[5], stop) || arm > 1 || stop > 1 ||
       forward < -1.0F || forward > 1.0F || turn < -1.0F || turn > 1.0F) {
-    Serial.printf("[CMD] REJECT_VALUE: v=%s seq=%s arm=%s fwd=%s turn=%s stop=%s\n",
-                  fields[0].c_str(), fields[1].c_str(), fields[2].c_str(),
-                  fields[3].c_str(), fields[4].c_str(), fields[5].c_str());
+    Serial.printf("[%s SECURITY REJECT] REJECT_VALUE: invalid field values\n", source ? source : "CMD");
     forceStop(SafetyState::SAFE_STOP, "REJECT_VALUE");
     return false;
   }
 
-  Serial.printf("[CMD] Parsed: v=%d seq=%d arm=%d fwd=%.3f turn=%.3f stop=%d\n",
-                version, sequence, arm, forward, turn, stop);
+  if (isBle || !bleLogOnly_) {
+    Serial.printf("[%s CMD PARSED] v=%d seq=%d arm=%d fwd=%.2f turn=%.2f stop=%d\n",
+                  source ? source : "CMD", version, sequence, arm, forward, turn, stop);
+  }
 
   if (hasSequence_ && sequence <= lastSequence_) {
-    Serial.printf("[CMD] REJECT_SEQUENCE: got %d, last was %d\n", sequence, lastSequence_);
+    Serial.println("********************************************************************************");
+    Serial.printf("[%s SECURITY ALERT] ⚠️ REPLAY ATTACK / REJECT_SEQUENCE DETECTED!\n", source ? source : "CMD");
+    Serial.printf("  ├── Injected Sequence Number : %d\n", sequence);
+    Serial.printf("  ├── Last Accepted Sequence   : %d\n", lastSequence_);
+    Serial.printf("  └── Defense Verdict          : BLOCKED! Replayed frame rejected.\n");
+    Serial.println("********************************************************************************");
     forceStop(SafetyState::SAFE_STOP, "REJECT_SEQUENCE");
     return false;
   }
@@ -315,23 +364,31 @@ bool RoverController::acceptFrame(const String& rawFrame, uint32_t nowMs) {
   lastCommandMs_ = nowMs;
 
   if (stop == 1 || arm == 0) {
-    Serial.printf("[CMD] %s command received\n", stop == 1 ? "STOP" : "DISARM");
+    Serial.printf("[%s CMD] %s command executed\n", source ? source : "CMD", stop == 1 ? "STOP" : "DISARM");
     forceStop(SafetyState::DISARMED, stop == 1 ? "STOP" : "DISARM");
     return true;
   }
   if (faultLatched_ || !drive_.isConfigured()) {
-    Serial.println("[CMD] DRIVE_UNAVAILABLE — fault latched or pins unset");
+    Serial.printf("[%s CMD] DRIVE_UNAVAILABLE — fault latched or pins unset\n", source ? source : "CMD");
     forceStop(SafetyState::FAULT, "DRIVE_UNAVAILABLE");
     return false;
   }
   if (!drive_.setAxes(forward, turn)) {
-    Serial.println("[CMD] DRIVE_REJECTED — setAxes returned false");
+    Serial.printf("[%s CMD] DRIVE_REJECTED — setAxes returned false\n", source ? source : "CMD");
     faultLatched_ = true;
     forceStop(SafetyState::FAULT, "DRIVE_REJECTED");
     return false;
   }
 
-  Serial.printf("[CMD] ACCEPTED — left=%.3f right=%.3f\n", forward + turn, forward - turn);
+  Serial.println("--------------------------------------------------------------------------------");
+  Serial.printf("[%s INJECTION ACCEPTED] ✅ MOTORS ENGAGED! (%s%s)\n",
+                source ? source : "CMD",
+                senderMac ? "From MAC: " : "", senderMac ? senderMac : "");
+  Serial.printf("  ├── Forward Throttle : %.2f\n", forward);
+  Serial.printf("  ├── Steering Rate    : %.2f\n", turn);
+  Serial.printf("  └── Motor PWM Power  : Left=%.2f  Right=%.2f\n", forward + turn, forward - turn);
+  Serial.println("--------------------------------------------------------------------------------");
+
   currentForward_ = forward;
   currentTurn_ = turn;
   safetyState_ = SafetyState::MANUAL;
@@ -398,8 +455,8 @@ void RoverController::forceStop(SafetyState newState, const String& event) {
   report(event);
 }
 
-bool RoverController::handleFrame(const String& frame, uint32_t nowMs) {
-  return instance_ != nullptr && instance_->acceptFrame(frame, nowMs);
+bool RoverController::handleFrame(const String& frame, uint32_t nowMs, const char* senderMac) {
+  return instance_ != nullptr && instance_->acceptFrame(frame, nowMs, "BLE", senderMac);
 }
 
 void RoverController::handleConnection(bool connected, bool authorized, uint32_t nowMs) {

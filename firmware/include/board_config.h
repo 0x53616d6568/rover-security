@@ -21,7 +21,7 @@ constexpr char ROVER_ID[] = "1";
 
 // ---- Timing ----
 constexpr uint32_t COMMAND_TIMEOUT_MS = 500;   // no command -> SAFE_STOP
-constexpr uint32_t TELEMETRY_PERIOD_MS = 1000;
+constexpr uint32_t TELEMETRY_PERIOD_MS = 100;  // 10 Hz high-speed telemetry for instant cockpit response
 constexpr uint32_t GPS_MAX_AGE_MS = 2000;      // older fix -> VALID=0
 
 // ---- BTS7960 #1 (left side) ----
