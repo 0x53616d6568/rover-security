@@ -1,0 +1,86 @@
+@startuml
+left to right direction
+skinparam shadowing false
+skinparam packageStyle rectangle
+skinparam actorStyle stickman
+skinparam usecase {
+  BackgroundColor #F8FAFC
+  BorderColor #334155
+  ArrowColor #475569
+}
+skinparam usecase<<misuse>> {
+  BackgroundColor #FEE2E2
+  BorderColor #B91C1C
+}
+skinparam usecase<<security>> {
+  BackgroundColor #DCFCE7
+  BorderColor #15803D
+}
+title Misuse cases — ENISOLAR Rover Security\nÉtat statique du dépôt, commit 4c808f6
+
+actor "Opérateur" as Operator
+actor "Central BLE\nà proximité" as BLEAttacker
+actor "Détenteur de\ncredentials MQTT" as MQTTAttacker
+actor "MITM réseau" as MITM
+actor "Contexte web\nnon fiable" as WebAttacker
+actor "Accès local\nUSB/UART" as LocalAttacker
+
+rectangle "Système : application opérateur + ESP32 rover\n(commandes sur deux voies actives : BLE local et MQTT)" {
+  usecase "Piloter en manuel\npar BLE local" as UC_BLE
+  usecase "Piloter en manuel\npar MQTT" as UC_MQTT
+  usecase "Consulter l’état et\nla télémétrie" as UC_Telemetry
+  usecase "Configurer le Wi-Fi\npar trame WIFI" as UC_Wifi
+  usecase "M1 — Prendre le contrôle\nvia BLE ouvert / identité faible" as M1 <<misuse>>
+  usecase "M2 — Publier une commande\navec un credential de contrôle" as M2 <<misuse>>
+  usecase "M3 — Usurper le broker\nou altérer le trafic TLS" as M3 <<misuse>>
+  usecase "M4 — Injecter ARM / AXES\npar postMessage non vérifié" as M4 <<misuse>>
+  usecase "M5 — Forcer SAFE_STOP\nou bloquer les commandes" as M5 <<misuse>>
+  usecase "M6 — Lire / falsifier\nla télémétrie" as M6 <<misuse>>
+  usecase "M7 — Exposer le mot de passe\nWi-Fi dans les traces série" as M7 <<misuse>>
+  usecase "S1 — Fermer l’accès BLE;\nauthentifier et protéger GATT" as S1 <<security>>
+  usecase "S2 — Valider CA et nom\nd’hôte TLS; imposer WSS" as S2 <<security>>
+  usecase "S3 — Ne pas embarquer\nde secrets MQTT dans le navigateur; ACL minimales" as S3 <<security>>
+  usecase "S4 — Vérifier origin, source\net schéma des messages web" as S4 <<security>>
+  usecase "S5 — Masquer les secrets\ndans les journaux; protéger NVS" as S5 <<security>>
+  usecase "S6 — Tester une coupure\nphysique indépendante" as S6 <<security>>
+}
+
+Operator --> UC_BLE
+Operator --> UC_MQTT
+Operator --> UC_Telemetry
+Operator --> UC_Wifi
+BLEAttacker --> M1
+BLEAttacker --> M5
+MQTTAttacker --> M2
+MITM --> M3
+MITM --> M6
+WebAttacker --> M4
+LocalAttacker --> M7
+
+M1 ..> UC_BLE : détourne
+M2 ..> UC_MQTT : détourne
+M3 ..> UC_MQTT : détourne / observe
+M3 ..> UC_Telemetry : falsifie
+M4 ..> UC_BLE : demande des actions
+M5 ..> UC_BLE : indisponibilité
+M5 ..> UC_MQTT : indisponibilité
+M6 ..> UC_Telemetry : compromet
+M7 ..> UC_Wifi : exploite les traces
+
+S1 ..> M1 : <<mitige>>
+S1 ..> M5 : <<mitige>>
+S2 ..> M3 : <<mitige>>
+S3 ..> M2 : <<mitige>>
+S4 ..> M4 : <<mitige>>
+S5 ..> M7 : <<mitige>>
+S6 ..> M1 : réduit l’impact physique
+S6 ..> M3 : réduit l’impact physique
+
+note bottom
+  Voies de commande actives retenues : BLE et MQTT. La documentation Phase 1
+  BLE-only est à réaligner avec l’architecture opérationnelle.
+  Les mitigations S1–S6 sont des exigences/recommandations, pas des garanties
+  de déploiement. Le coupe-circuit physique reste à définir et tester.
+  Le dépôt ne prouve pas une validation end-to-end de ces voies sur le rover.
+end note
+@enduml

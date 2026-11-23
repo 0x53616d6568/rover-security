@@ -1,0 +1,101 @@
+@startuml
+left to right direction
+skinparam shadowing false
+skinparam packageStyle rectangle
+skinparam actorStyle stickman
+skinparam usecase {
+  BackgroundColor #F8FAFC
+  BorderColor #334155
+  ArrowColor #475569
+}
+skinparam usecase<<abuse>> {
+  BackgroundColor #FEE2E2
+  BorderColor #B91C1C
+}
+skinparam usecase<<step>> {
+  BackgroundColor #FFF7ED
+  BorderColor #C2410C
+}
+skinparam usecase<<impact>> {
+  BackgroundColor #EDE9FE
+  BorderColor #6D28D9
+}
+title Abuse cases — chemins d’attaque contre ENISOLAR Rover\nAnalyse statique du dépôt, commit 4c808f6
+
+actor "Attaquant BLE\nà proximité" as BLEAttacker
+actor "Lecteur du dépôt /\ndétenteur de credential" as CredentialAttacker
+actor "Adversaire réseau\nMITM" as NetworkAttacker
+actor "Contexte web pouvant\nposter un message" as WebAttacker
+actor "Accès local\nà l’UART" as UARTAttacker
+
+rectangle "Cibles : PWA, ESP32 principal, broker MQTT, BLE,\nactuateurs et données rover" {
+  usecase "A1 — Prendre le contrôle\npar BLE" as A1 <<abuse>>
+  usecase "Découvrir le service BLE\nannoncé" as A1a <<step>>
+  usecase "Se connecter : la valeur MAC\npar défaut autorise tout central" as A1b <<step>>
+  usecase "Émettre CMD valide avec\nséquence croissante" as A1c <<step>>
+
+  usecase "A2 — Prendre le contrôle\npar MQTT" as A2 <<abuse>>
+  usecase "Récupérer un credential\ndans une doc suivie ou le bundle VITE" as A2a <<step>>
+  usecase "Publier CMD sur le broker\nde commande" as A2b <<step>>
+
+  usecase "A3 — Usurper le broker\nou altérer les échanges" as A3 <<abuse>>
+  usecase "Profiter de l’absence de\nvalidation du certificat TLS" as A3a <<step>>
+  usecase "Intercepter / modifier\ncommande ou télémétrie" as A3b <<step>>
+
+  usecase "A4 — Rendre le rover\nindisponible" as A4 <<abuse>>
+  usecase "Si la liste blanche est activée :\nle central refusé reste connecté et déclenche SAFE_STOP" as A4a <<step>>
+  usecase "Ou accepter UINT32_MAX :\nles séquences suivantes sont rejetées" as A4b <<step>>
+
+  usecase "A5 — Exposer un secret Wi-Fi\npar une trame WIFI" as A5 <<abuse>>
+  usecase "Envoyer WIFI via un chemin\nde commande accessible" as A5a <<step>>
+  usecase "Collecter les logs série :\nla trame complète est journalisée" as A5b <<step>>
+
+  usecase "A6 — Déclencher ARM / AXES\nvia le pont postMessage" as A6 <<abuse>>
+  usecase "Poster sans contrôle d’origin/source;\nles gardes d’état restent applicables" as A6a <<step>>
+
+  usecase "Impact — Mouvement moteur\nnon autorisé" as I1 <<impact>>
+  usecase "Impact — SAFE_STOP / perte\nde disponibilité jusqu’au reset" as I2 <<impact>>
+  usecase "Impact — Divulgation de\ncredentials réseau" as I3 <<impact>>
+  usecase "Impact — Télémétrie observée\nou falsifiée" as I4 <<impact>>
+}
+
+BLEAttacker --> A1
+CredentialAttacker --> A2
+NetworkAttacker --> A3
+BLEAttacker --> A4
+CredentialAttacker --> A5
+UARTAttacker --> A5
+WebAttacker --> A6
+
+A1 ..> A1a : <<include>>
+A1 ..> A1b : <<include>>
+A1 ..> A1c : <<include>>
+A2 ..> A2a : <<include>>
+A2 ..> A2b : <<include>>
+A3 ..> A3a : <<include>>
+A3 ..> A3b : <<include>>
+A4 ..> A4a : <<extend>>
+A4 ..> A4b : <<extend>>
+A5 ..> A5a : <<include>>
+A5 ..> A5b : <<include>>
+A6 ..> A6a : <<include>>
+
+A1 ..> I1 : <<leads to>>
+A2 ..> I1 : <<leads to>>
+A3 ..> I1 : <<may lead to>>
+A3 ..> I4 : <<may lead to>>
+A4 ..> I2 : <<leads to>>
+A5 ..> I3 : <<leads to>>
+A6 ..> I1 : <<may lead to>>
+
+note bottom
+  A2 est directement favorisé par une valeur de credential présente dans un document
+  suivi du dépôt; les valeurs sensibles sont volontairement omises de ce diagramme.
+  L’impact mécanique, l’exploitation réelle et l’état du matériel ne sont pas testés.
+  Voies de commande actives retenues : BLE et MQTT. Le dépôt ne prouve pas leur
+  validation end-to-end sur le matériel.
+  A4a dépend d’une liste blanche restrictive, alors que la configuration courante
+  autorise tous les centraux. A6 suppose qu’un contexte non fiable peut atteindre la fenêtre;
+  l’exploitabilité dépend de l’intégration et de l’état courant du rover.
+end note
+@enduml
