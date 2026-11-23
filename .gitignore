@@ -24,6 +24,16 @@ secrets.h
 raw-captures/
 private-evidence/
 
+# ESP32 flash/NVS attack workbench artifacts are unredacted; never commit them
+attacks/esp32-firmware-extraction/workbench/evidence/
+attacks/esp32-firmware-extraction/workbench/extracted/
+attacks/esp32-firmware-extraction/workbench/reports/
+attacks/esp32-firmware-extraction/workbench/config.json
+attacks/esp32-firmware-extraction/workbench/*_case/
+nvs_decoded*.txt
+app0_candidates*.txt
+strings_report.json
+
 # Editor and OS files
 .DS_Store
 .vscode/
@@ -33,3 +43,7 @@ private-evidence/
 node_modules/
 dist/
 *.local
+
+# Python tooling
+__pycache__/
+*.py[cod]

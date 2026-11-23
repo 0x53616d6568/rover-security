@@ -100,7 +100,7 @@ Notes:
 - Put the credential username/password in `secrets.h` and `.env.local`, never in
   the repository.
 
-Rotate credentials when anyone with access leaves the project.
+Rotate credentials when anyone with access leaves the project. Also rotate after any [flash/NVS credential-recovery exercise](../attacks/esp32-firmware-extraction/README.md): broker credentials compiled into `app0.bin` and Wi-Fi credentials persisted in NVS must be treated as exposed even if the image is later deleted. Deleting an NVS entry is not rotation.
 
 ## Payload contract
 
@@ -271,4 +271,4 @@ command link.
 - [ ] Command broker credentials and default-permission confirmation.
 - [ ] Replace `setInsecure()` with the HiveMQ CA pinned on both links.
 - [ ] Decide whether telemetry loss should force a stop (currently it does not).
-- [ ] Rotate any credentials that were previously committed to the repository.
+- [ ] Rotate any credentials that were previously committed to the repository or copied into unredacted flash/NVS reports.
