@@ -66,3 +66,9 @@ passwords/tokens/private keys, or put credentials into logs or screenshots.
 Broker authentication is the only authorization on the command path, so treat
 command-broker credentials as control credentials. BLE pairing alone is not a
 complete security guarantee.
+
+A further boundary is physical/debug access: credentials can be recovered from
+ESP32 flash and NVS with the [documented extraction workbench](../attacks/esp32-firmware-extraction/README.md).
+Compromise of that boundary can expose both the WiFi initialization secret and
+the command-broker credential, so rotation and hardware protections are part of
+the connectivity review, not optional cleanup.

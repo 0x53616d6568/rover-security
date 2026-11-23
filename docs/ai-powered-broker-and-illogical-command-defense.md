@@ -5,6 +5,8 @@
 **Target Platform:** ENISOLAR Autonomous Rover (ESP32 Core, BTS7960 Motor Subsystem)  
 **Classification:** Security Architecture & Defense Engineering  
 
+> **Credential hygiene:** configuration values in the example code are placeholders loaded from the environment. Never commit real broker passwords or gateway secrets. A credential that was ever committed or appeared in an unredacted [flash/NVS report](../attacks/esp32-firmware-extraction/README.md) must be rotated before this design is deployed.
+
 ---
 
 ## 1. Executive Summary
@@ -209,6 +211,7 @@ Inspects incoming command frames, identifies illogical/destructive vectors,
 and enforces rate limits, kinematic bounds, and isolation policies.
 """
 
+import os
 import time
 import re
 import hmac
@@ -220,14 +223,14 @@ import paho.mqtt.client as mqtt
 # ================= Configuration =================
 UPSTREAM_BROKER = "cbe3900b046e42cba6060cb5790fbe1d.s1.eu.hivemq.cloud"
 UPSTREAM_PORT = 8883
-UPSTREAM_USER = "majdgha"
-UPSTREAM_PASS = "552003Ssl"
+UPSTREAM_USER = os.environ.get("ROVER_MQTT_USER", "<set-locally>")
+UPSTREAM_PASS = os.environ.get("ROVER_MQTT_PASS", "<set-locally>")
 
 DOWNSTREAM_COMMAND_TOPIC = "rover/1/command"
 SECURE_OUT_TOPIC = "rover/1/command/sanitized"
 CONTROL_TOPIC = "rover/1/control"
 
-SECRET_KEY = b"ENISOLAR_AI_GATEWAY_SUPER_SECRET_KEY_2026"
+SECRET_KEY = os.environ.get("ROVER_GATEWAY_SECRET", "<set-locally>").encode()
 
 # Kinematic Constraints
 MAX_ACCEL = 3.5          # max delta throttle per second
@@ -403,3 +406,13 @@ bool RoverController::handleMigrationFrame(const String& frame) {
 | **Sequence Hop Attack (`seq = 2^{32}-1`)** | Genuine controller permanently locked out | Monotonic window limits sequence hop to $\le 500$; replayed frames discarded |
 | **Volumetric Packet Flood** | ESP32 socket buffer overflow, safety watchdog starvation | Token bucket drops excess packets before transmission |
 | **Compromised Command Broker** | Attacker retains persistent command injection authority | AI issues authenticated `SHIFT_BROKER`; ESP32 migrates to secure quarantine broker |
+
+---
+
+## 9. Related attack types and assumptions
+
+This defense model assumes the gateway's own credentials and signing key remain secret. That assumption is broken by [ESP32 flash extraction and NVS credential recovery](../attacks/esp32-firmware-extraction/README.md): broker credentials compiled into the application image can be read back, and Wi-Fi credentials persisted from `WIFI` frames can be recovered from NVS. Rotate exposed credentials before deploying this gateway.
+
+The source-side [BLE discovery and GATT enumeration test](../manual%20mode%20firmware%20security/ble-unauthenticated-discovery-and-gatt-enumeration.md) is a separate entry boundary. A BLE foothold may provide command writes, but it does not by itself prove flash read access or broker credential recovery; keep the evidence for each attack type separate.
+
+This document specifies a design and contains illustrative code. It is not evidence that the AI broker, signed `SHIFT_BROKER` frame, or firmware containment hook has been implemented, built, or tested on the rover.

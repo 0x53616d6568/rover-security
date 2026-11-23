@@ -19,6 +19,16 @@ This is a supervised classroom prototype plan, not a security certification or p
 - [ ] Keep controls off the public internet. Do not use port forwarding, public brokers, cloud control, or committed credentials.
 - [ ] Keep persons, roads, stairs, and fragile equipment out of the test area.
 
+## Attack-type exercises
+
+The security work is split into tracked attack types. See the [attack type registry](attack-types.md) before running any test.
+
+- **AT-01 — BLE discovery / GATT enumeration:** read-only radio assessment; do not write to the command characteristic in that procedure.
+- **AT-02 — Illogical command injection:** design-level analysis of destructive or state-inverting frames; requires a separate, hardware-supervised test if ever executed.
+- **AT-03 — ESP32 flash extraction / NVS credential recovery:** local, read-only extraction of Wi-Fi and MQTT material from firmware and NVS. Use the [sanitized workbench](../attacks/esp32-firmware-extraction/README.md) only on project-owned hardware.
+
+For AT-03, keep all dumps, extracted partitions, and unredacted reports outside git. Never commit SSIDs, passwords, broker credentials, certificates, private keys, or raw report lines. Recovered credentials must be rotated; deleting an NVS value is not rotation.
+
 ## Evidence to retain
 
 Record firmware/build version, wiring revision, test conditions, STOP and physical cut-off tests separately, measured disconnect-stop time, invalid-command results, sensor availability/age behavior, repetitions, and unresolved defects. Mark any mock/simulated telemetry clearly.

@@ -1,0 +1,4 @@
+esptool>=5.0
+pyserial>=3.5
+makeelf>=0.3
+hexdump>=3.3

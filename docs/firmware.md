@@ -87,6 +87,8 @@ WIFI,<ssid>,<password>
 
 The ESP32 persists the credentials and restarts the WiFi/MQTT links with them; the frame is refused while the drive authority is active. A valid example is `WIFI,HomeNet,s3cret!`.
 
+Because the credential is stored in NVS, treat any device that has received a `WIFI` frame as containing recoverable secrets. The [flash extraction attack type](../attacks/esp32-firmware-extraction/README.md) documents how NVS and application images can expose these values; the frame must therefore be accepted only from an authorized command source, and recovered credentials must be rotated.
+
 Before a real build, set the verified PWM/direction/enable pins and the paired phone BLE address in [`board_config.h`](../firmware/include/board_config.h). An empty address rejects every BLE central, and unset motor pins keep the drive unavailable. The current drive adapter assumes one PWM and one direction signal per side; adapt it only after the actual driver interface is reviewed.
 
 ## Local build

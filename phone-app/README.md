@@ -91,6 +91,13 @@ same command link (BLE or MQTT command broker):
 WIFI,<ssid>,<password>
 ```
 
+The frame carries a real credential and the firmware stores it in NVS. Anyone
+who can write to the command path can set or overwrite network configuration,
+and anyone with flash access can recover the value. See the
+[flash extraction attack type](../attacks/esp32-firmware-extraction/README.md).
+Do not log the frame, show the password in UI text, or treat a BLE pairing alone
+as sufficient protection for this privileged operation.
+
 ### Telemetry
 
 Every displayed measurement must preserve the rover's unit, validity, and

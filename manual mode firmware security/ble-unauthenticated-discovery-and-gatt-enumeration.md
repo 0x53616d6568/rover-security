@@ -216,6 +216,10 @@ Use a row like this in the test log:
 
 A complete result distinguishes the four outcomes: **advertised**, **connected**, **enumerated**, and **readable**. Do not describe a UUID being visible or a successful connection as a command-control compromise.
 
+## Related attack type
+
+A BLE foothold can be combined with [ESP32 flash extraction and NVS credential recovery](../attacks/esp32-firmware-extraction/README.md) to turn observed identifiers into recovered network and broker credentials. Keep the tests separate in reporting: GATT enumeration and credential recovery are different access boundaries and must be evidenced independently.
+
 ## Taxonomy references
 
 Use taxonomy IDs only when the test outcome supports them:
