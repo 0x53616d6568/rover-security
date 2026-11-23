@@ -29,6 +29,7 @@ export interface AppState {
   lastSequence: number;
   joystickActive: boolean;
   armPending: boolean;
+  selectedRoverId?: string;
 }
 
 export type AppAction =
@@ -43,6 +44,7 @@ export type AppAction =
   | { type: "COMMAND_SENT"; sequence: number; frame: string; at: number }
   | { type: "AXES_CHANGED"; axes: AxisState; active: boolean }
   | { type: "SET_ARM_PENDING"; pending: boolean }
+  | { type: "SELECT_ROVER"; roverId?: string }
   | { type: "PUSH_EVENT"; event: RoverEvent }
   | { type: "RESET_SESSION" };
 
@@ -70,6 +72,7 @@ export function initialState(demoMode = false, supported = true, supportMessage 
     lastSequence: 0,
     joystickActive: false,
     armPending: false,
+    selectedRoverId: undefined,
   };
 }
 
@@ -81,6 +84,8 @@ export function appReducer(state: AppState, action: AppAction): AppState {
       return { ...state, demoMode: action.enabled };
     case "SET_CONNECTION_STATUS":
       return { ...state, connectionStatus: action.status };
+    case "SELECT_ROVER":
+      return { ...state, selectedRoverId: action.roverId };
     case "LINKS_CHANGED":
       return { ...state, links: action.links };
     case "CONNECTION_CHANGED": {
@@ -104,6 +109,7 @@ export function appReducer(state: AppState, action: AppAction): AppState {
         axes: { forward: 0, turn: 0 },
         joystickActive: false,
         armPending: false,
+        selectedRoverId: connected ? state.selectedRoverId : undefined,
       };
     }
     case "CONNECTION_ERROR":

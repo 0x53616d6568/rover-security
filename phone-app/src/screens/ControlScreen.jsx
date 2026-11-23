@@ -11,8 +11,9 @@ import { readNumber, readText } from "../components/readings";
 
 const panel = "rounded-2xl border border-white/10 bg-white/[0.04] p-3";
 
-export default function ControlScreen({ state, connected, arm, disarm, stop, setAxes, onNavigate }) {
+export default function ControlScreen({ state, connected, arm, disarm, stop, setAxes, onNavigate, selectedRoverId }) {
   const raw = state.telemetry?.raw ?? {};
+  const ready = connected && Boolean(selectedRoverId);
   const heading = readNumber(raw, "HEADING");
   const battery = readNumber(raw, "BATTERY");
   const gps = readText(raw, "GPS", "");
@@ -33,7 +34,7 @@ export default function ControlScreen({ state, connected, arm, disarm, stop, set
     };
 
     const updateAxes = () => {
-      if (!connected || state.safetyState !== "MANUAL") return;
+      if (!ready || state.safetyState !== "MANUAL") return;
       const forward = (pressed.current.has("KeyZ") || pressed.current.has("ArrowUp") ? 1 : 0) +
         (pressed.current.has("KeyS") || pressed.current.has("ArrowDown") ? -1 : 0);
       const turn = (pressed.current.has("KeyD") || pressed.current.has("ArrowRight") ? 1 : 0) +
@@ -77,7 +78,7 @@ export default function ControlScreen({ state, connected, arm, disarm, stop, set
       window.removeEventListener("blur", onBlur);
       pressed.current.clear();
     };
-  }, [connected, state.safetyState, setAxes, stop]);
+  }, [ready, state.safetyState, setAxes, stop]);
 
   return (
     <div className="grid gap-3 lg:grid-cols-[64px_1fr_300px]">
@@ -154,7 +155,7 @@ export default function ControlScreen({ state, connected, arm, disarm, stop, set
             <div className="flex h-36 items-center justify-center">
               <div className="scale-75 sm:scale-90">
                 <Joystick
-                  disabled={!connected || state.safetyState !== "MANUAL"}
+                  disabled={!ready || state.safetyState !== "MANUAL"}
                   axes={state.axes}
                   onAxesChange={(f, t, a) => setAxes(f, t, a)}
                 />
@@ -165,14 +166,16 @@ export default function ControlScreen({ state, connected, arm, disarm, stop, set
             </div>
             <div className="mt-3 grid grid-cols-2 gap-2">
               <button
+                disabled={!ready}
                 onClick={() => (state.safetyState === "MANUAL" ? disarm() : arm())}
-                className="rounded-xl bg-green-400/90 py-2 text-xs font-semibold text-deep"
+                className="rounded-xl bg-green-400/90 py-2 text-xs font-semibold text-deep disabled:opacity-40"
               >
                 {state.safetyState === "MANUAL" ? "Disarm" : "Arm → MANUAL"}
               </button>
               <button
+                disabled={!ready}
                 onClick={() => stop()}
-                className="rounded-xl bg-red-500/90 py-2 text-xs font-semibold text-white"
+                className="rounded-xl bg-red-500/90 py-2 text-xs font-semibold text-white disabled:opacity-40"
               >
                 EMERGENCY STOP
               </button>
@@ -256,7 +259,8 @@ export default function ControlScreen({ state, connected, arm, disarm, stop, set
             </div>
           </div>
           <div className="mt-3 space-y-1 text-[10px] text-white/70">
-            <div>ESP32: {connected ? "Connected" : "Disconnected"}</div>
+            <div>Selected rover: {selectedRoverId ?? "None"}</div>
+            <div>ESP32: {ready ? "Connected" : "Disconnected"}</div>
             <div>Firmware: {raw.FW ?? "unknown"}</div>
             <div>BLE RSSI: {raw.RSSI ?? "N/A"}</div>
             <div>Last ACK: {state.lastAck ? `${state.lastAck.event} #${state.lastAck.sequence}` : "—"}</div>

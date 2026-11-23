@@ -29,6 +29,10 @@ always independent of this app.
 - **Testing:** unit tests for command encoding, bounds, sequence handling, and
   telemetry parsing; browser/device tests for BLE connection, disconnect, STOP,
   reconnect, and disabled controls.
+- **User management:** the `Users` screen lists owners and rovers, adds an owner,
+  associates a rover by MAC, and marks the active rover for the currently
+  selected command page. MAC values are encrypted server-side by
+  [`../backend/server.mjs`](../backend/README.md).
 
 The first implementation should target Chromium-based browsers with Web
 Bluetooth support. The app must detect unsupported browsers and show a clear
@@ -97,6 +101,29 @@ and anyone with flash access can recover the value. See the
 [flash extraction attack type](../attacks/esp32-firmware-extraction/README.md).
 Do not log the frame, show the password in UI text, or treat a BLE pairing alone
 as sufficient protection for this privileged operation.
+
+### User management and selected rover
+
+The app has a `Users` screen. It must show:
+
+- owners, their active rover, and rover bindings (`roverId`, backend connection
+  state, add/remove controls);
+- a per-owner add-rover form for a MAC address;
+- the selected rover, because rover telemetry/control are gated by
+  `state.selectedRoverId`.
+
+A rover can be selected for control only from the Users list. The control page
+must refuse to arm, move, or show joystick control when there is no selected
+rover or when the selected rover is not connected. When the selected rover is
+disconnected, show the loss immediately and keep controls disabled.
+
+### Authentication
+
+The phone app gates all screens behind login. On load it calls `GET /api/auth/me`; if unauthenticated, it shows `LoginScreen`. After `POST /api/auth/login`, it calls `GET /api/auth/me` and enters the Users screen.
+
+If backend calls fail and browser localStorage is available, login uses local owner **`Owner`** with password **`Rover2026!`**. If the store already has users/rosters, it uses the stored `authUser`.
+
+The `Users` screen has a password input for adding owners. Existing owners are displayed by name. The top-right of Users has a `Log out` action.
 
 ### Telemetry
 

@@ -24,6 +24,10 @@ secrets.h
 raw-captures/
 private-evidence/
 
+# Local backend state/security material
+backend/rover-users.db
+*.db
+
 # ESP32 flash/NVS attack workbench artifacts are unredacted; never commit them
 attacks/esp32-firmware-extraction/workbench/evidence/
 attacks/esp32-firmware-extraction/workbench/extracted/

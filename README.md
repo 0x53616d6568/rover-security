@@ -45,6 +45,7 @@ Integrate daily on a known-good build. First motor tests are with the wheels lif
 - [MQTT split architecture and broker topics](docs/mqtt-architecture.md)
 - [Dashboard and telemetry contract](docs/dashboard.md)
 - [Phone app stack and BLE interface](phone-app/README.md)
+- [Backend user management and product access](backend/README.md)
 - [Navigation scope and future gate](docs/navigation.md)
 - [Security and test checklist](docs/security.md)
 - [Attack type registry](docs/attack-types.md)

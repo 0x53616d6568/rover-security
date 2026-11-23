@@ -85,13 +85,14 @@ export function useRover() {
     return () => document.removeEventListener("visibilitychange", handleVisibility);
   }, []);
 
-  const connect = useCallback(async () => {
+  const connect = useCallback(async (roverId?: string) => {
     const adapter = adapterRef.current;
     if (!adapter) return;
     // Ignore repeat clicks while the browser chooser/GATT handshake is running.
     if (stateRef.current.connectionStatus === "connecting") return;
+    dispatch({ type: "SELECT_ROVER", roverId });
     dispatch({ type: "SET_CONNECTION_STATUS", status: "connecting" });
-    console.info("[useRover] connect: adapter", adapter.id);
+    console.info("[useRover] connect: adapter", adapter.id, roverId);
     try {
       await adapter.connect();
     } catch (error) {
@@ -103,6 +104,7 @@ export function useRover() {
   const disconnect = useCallback(async () => {
     const adapter = adapterRef.current;
     if (!adapter) return;
+    dispatch({ type: "SELECT_ROVER", roverId: undefined });
     console.info("[useRover] disconnect: adapter", adapter.id);
     try {
       await adapter.disconnect();
@@ -127,7 +129,7 @@ export function useRover() {
 
   const sendWifi = useCallback(async (ssid: string, password: string) => {
     const adapter = adapterRef.current;
-    if (!adapter) return;
+    if (!adapter || !stateRef.current.selectedRoverId) return;
     const frame = encodeWifi(ssid, password);
     console.info("[useRover] sendWifi frame", frame);
     try {
@@ -147,7 +149,7 @@ export function useRover() {
 
   const arm = useCallback(async () => {
     const current = stateRef.current;
-    if (!current.supported || current.connectionStatus !== "connected" || current.safetyState === "FAULT") {
+    if (!current.supported || !current.selectedRoverId || current.connectionStatus !== "connected" || current.safetyState === "FAULT") {
       dispatch({ type: "PUSH_EVENT", event: createEvent("warn", "Arming requires a connected, non-faulted rover.") });
       return;
     }

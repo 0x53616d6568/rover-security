@@ -1,11 +1,15 @@
-import { useState, useEffect } from "react";
+import { useCallback, useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Settings } from "lucide-react";
 
 import { useRover } from "./app/useRover";
+import { getMe, loginUser } from "./app/management";
+import type { ManagementUser } from "./app/managementTypes";
 import { formatAge } from "./protocol/telemetry";
 import WelcomeScreen from "./screens/WelcomeScreen";
 import ConnectionScreen from "./screens/ConnectionScreen";
+import UsersScreen from "./screens/UsersScreen";
+import LoginScreen from "./screens/LoginScreen";
 import CockpitScreen from "./screens/CockpitScreen";
 import TelemetryScreen from "./screens/TelemetryScreen";
 import CameraScreen from "./screens/CameraScreen";
@@ -16,6 +20,7 @@ const glass = "bg-white/5 border border-white/20 backdrop-blur-xl shadow-[0_8px_
 const tabs = [
   { id: "welcome", label: "Welcome" },
   { id: "connection", label: "Connection" },
+  { id: "users", label: "Users" },
   { id: "control", label: "Control" },
   { id: "telemetry", label: "Telemetry" },
   { id: "camera", label: "Camera" },
@@ -25,12 +30,36 @@ const tabs = [
 export default function App() {
   const { state, connect, disconnect, arm, disarm, stop, setAxes, toggleDemo, sendWifi } = useRover();
   const [tab, setTab] = useState("welcome");
+  const [auth, setAuth] = useState<ManagementUser | null>(null);
+  const [authLoading, setAuthLoading] = useState(true);
+  const selectedRoverId = state.selectedRoverId;
 
   useEffect(() => {
-    if (state.connectionStatus === "connected") setTab("control");
-  }, [state.connectionStatus]);
-  const connected = state.connectionStatus === "connected";
+    let mounted = true;
+    getMe()
+      .then((user) => { if (mounted) setAuth(user); })
+      .catch(() => { if (mounted) setAuth(null); })
+      .finally(() => { if (mounted) setAuthLoading(false); });
+    return () => { mounted = false; };
+  }, []);
+
+  const handleLogin = useCallback(async (name: string, password: string) => {
+    const user = await loginUser(name, password);
+    setAuth(user);
+    setTab("users");
+  }, []);
+
+
+
+  useEffect(() => {
+    if (state.connectionStatus === "connected" && selectedRoverId) setTab("control");
+  }, [state.connectionStatus, selectedRoverId]);
+  const connected = state.connectionStatus === "connected" && Boolean(selectedRoverId);
   const commandOnline = state.links.command;
+
+  if (authLoading || !auth) {
+    return <LoginScreen onLogin={handleLogin} isLoading={authLoading} />;
+  }
   const commandLabel = commandOnline
     ? "CMD online"
     : state.connectionStatus === "connecting"
@@ -53,6 +82,7 @@ export default function App() {
         stop={stop}
         setAxes={setAxes}
         onNavigate={setTab}
+        selectedRoverId={selectedRoverId}
       />
     );
   }
@@ -117,7 +147,13 @@ export default function App() {
                 arm={arm}
                 disarm={disarm}
                 sendWifi={sendWifi}
+                selectedRoverId={selectedRoverId}
               />
+            </motion.div>
+          )}
+          {tab === "users" && (
+            <motion.div key="users" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
+              <UsersScreen connect={connect} disconnect={disconnect} state={state} />
             </motion.div>
           )}
           {tab === "control" && (
@@ -130,6 +166,7 @@ export default function App() {
                 stop={stop}
                 setAxes={setAxes}
                 onNavigate={setTab}
+                selectedRoverId={selectedRoverId}
               />
             </motion.div>
           )}

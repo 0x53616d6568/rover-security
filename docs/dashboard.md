@@ -4,9 +4,12 @@
 
 Provide a readable phone interface for manual drive and telemetry over the split MQTT links (telemetry broker for reads, command broker for writes), with BLE as an alternate local path. Keep a prominent software STOP, show link and safety state immediately, and prevent commands when the rover is disconnected or not ready. The software STOP does not replace the physical cut-off.
 
+Product access is user-managed: the Users screen associates rover bindings to owners, and rover telemetry/control is available only through a selected rover.
+
 ## Minimum screen
 
 - **Control/safety:** command-link connected/disconnected, telemetry-link status, DISARMED / MANUAL / SAFE STOP / FAULT, joystick axes, arm/disarm, STOP, quality/age of the last command, acknowledgement/rejection.
+- **Users:** owners and rover bindings; one active rover can be selected at a time.
 - **Power:** battery voltage and alerts only if a divider/measurement is actually installed and calibrated; current only when the selected driver/sensor output is verified.
 - **Motion:** encoder-derived left/right speed if encoders are fitted and calibrated; IMU inclination/angular rate and compass heading only with validity/calibration status.
 - **GPS:** fix validity, coordinates, satellites, HDOP and age; informational in Phase 1, not an autonomous route.
@@ -31,4 +34,4 @@ Do not show “command succeeded” unless the rover reports acknowledgement/cur
 
 ## Acceptance
 
-An operator can tell whether the rover is connected, armed, moving, stopped, faulted, and whether each displayed reading is fresh and valid. The stop control is immediately available. The dashboard never permits driving while disconnected and never implies a command or sensor is successful without corresponding evidence.
+An operator can tell whether the rover is connected, armed, moving, stopped, faulted, and whether each displayed reading is fresh and valid. The stop control is immediately available. The dashboard never permits driving while disconnected and never implies a command or sensor is successful without corresponding evidence. A rover command page is reachable only through a rover selected from the Users list; when that rover is disconnected, controls stay disabled.

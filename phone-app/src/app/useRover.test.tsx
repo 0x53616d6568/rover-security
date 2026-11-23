@@ -3,11 +3,11 @@ import { describe, expect, it } from "vitest";
 
 import { useRover } from "./useRover";
 
-async function connectDemo() {
+async function connectDemo(roverId = "test-rover-id") {
   const hook = renderHook(() => useRover());
   act(() => hook.result.current.toggleDemo());
   await act(async () => {
-    await hook.result.current.connect();
+    await hook.result.current.connect(roverId);
   });
   return hook;
 }

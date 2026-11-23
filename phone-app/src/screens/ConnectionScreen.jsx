@@ -13,8 +13,9 @@ function linkTone(connected, connecting, errored) {
   return { dot: "bg-red-500", text: "Disconnected", textClass: "text-red-400" };
 }
 
-export default function ConnectionScreen({ state, connected, connect, disconnect, toggleDemo, arm, disarm, sendWifi }) {
+export default function ConnectionScreen({ state, connected, connect, disconnect, toggleDemo, arm, disarm, sendWifi, selectedRoverId }) {
   const [wifiSsid, setWifiSsid] = useState("");
+  const ready = connected && Boolean(selectedRoverId);
   const [wifiPassword, setWifiPassword] = useState("");
   const [wifiBusy, setWifiBusy] = useState(false);
   const [wifiError, setWifiError] = useState("");
@@ -120,7 +121,7 @@ export default function ConnectionScreen({ state, connected, connect, disconnect
           </button>
           <button
             onClick={() => (state.safetyState === "MANUAL" ? disarm() : arm())}
-            disabled={!connected}
+            disabled={!ready}
             className="rounded-full bg-green-400/90 px-4 py-2 text-xs font-semibold text-deep disabled:opacity-40"
           >
             {state.safetyState === "MANUAL" ? "Disarm" : "Arm → MANUAL"}
@@ -151,7 +152,7 @@ export default function ConnectionScreen({ state, connected, connect, disconnect
           <div className="mt-3 flex items-center gap-3">
             <button
               onClick={() => void sendWifiCredentials()}
-              disabled={wifiBusy || !connected}
+              disabled={wifiBusy || !ready}
               className="rounded-full bg-green-400/90 px-4 py-2 text-xs font-semibold text-deep disabled:opacity-40"
             >
               {wifiBusy ? "Sending…" : "Send WiFi init"}
@@ -186,6 +187,7 @@ export default function ConnectionScreen({ state, connected, connect, disconnect
           <div className="text-sm font-semibold">Device info</div>
           <div className="mt-2 space-y-1 text-xs text-white/70">
             <div>Rover: TerraRover X1</div>
+            <div>Selected rover: {selectedRoverId ?? "None"}</div>
             <div>Firmware: {readText(raw, "FW", "unknown")}</div>
             <div>Last ACK: {state.lastAck ? `${state.lastAck.event} #${state.lastAck.sequence}` : "—"}</div>
             <div>Telemetry age: {readText(raw, "AGE_MS", "—") === "—" ? "—" : `${readText(raw, "AGE_MS", "—")} ms`}</div>

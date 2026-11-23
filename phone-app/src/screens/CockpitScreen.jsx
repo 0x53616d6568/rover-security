@@ -19,10 +19,12 @@ export default function CockpitScreen({
   stop,
   setAxes,
   onNavigate,
+  selectedRoverId,
 }) {
   const [viewMode, setViewMode] = useState("3d"); // "3d" | "classic"
   const [hudVersion, setHudVersion] = useState(() => Date.now());
   const iframeRef = useRef(null);
+  const canCommand = connected && Boolean(selectedRoverId);
 
   /** Send a message to the iframe safely */
   const send = useCallback((msg) => {
@@ -107,16 +109,16 @@ export default function CockpitScreen({
       if (!d || typeof d !== "object") return;
       switch (d.type) {
         case "ARM":
-          if (connected) arm();
+          if (canCommand) arm();
           break;
         case "DISARM":
-          disarm();
+          if (canCommand) disarm();
           break;
         case "ESTOP":
-          stop();
+          if (canCommand) stop();
           break;
         case "AXES":
-          if (connected && state.safetyState === "MANUAL") {
+          if (canCommand && state.safetyState === "MANUAL") {
             setAxes(
               Math.max(-1, Math.min(1, d.forward ?? 0)),
               Math.max(-1, Math.min(1, d.turn ?? 0)),
@@ -136,7 +138,7 @@ export default function CockpitScreen({
     };
     window.addEventListener("message", handler);
     return () => window.removeEventListener("message", handler);
-  }, [connected, state.safetyState, arm, disarm, stop, setAxes, onNavigate]);
+  }, [canCommand, state.safetyState, arm, disarm, stop, setAxes, onNavigate]);
 
   if (viewMode === "classic") {
     return (
@@ -166,6 +168,7 @@ export default function CockpitScreen({
             stop={stop}
             setAxes={setAxes}
             onNavigate={onNavigate}
+            selectedRoverId={selectedRoverId}
           />
         </div>
       </div>
