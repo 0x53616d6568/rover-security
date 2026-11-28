@@ -1,8 +1,8 @@
 {
-  "name": "enisolar-rover-security",
+  "name": "roverx-security",
   "private": true,
   "version": "0.1.0",
-  "description": "EniSolar rover security research: firmware, operator console, and management API.",
+  "description": "RoverX security research: firmware, operator console, and management API.",
   "workspaces": [
     "apps/*"
   ],

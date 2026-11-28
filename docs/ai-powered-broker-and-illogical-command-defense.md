@@ -2,7 +2,7 @@
 ## Deep Defense Specification: Detecting Illogical Command Injections & Dynamic Broker Migration
 
 **Document Version:** 1.0  
-**Target Platform:** ENISOLAR Autonomous Rover (ESP32 Core, BTS7960 Motor Subsystem)  
+**Target Platform:** RoverX Autonomous Rover (ESP32 Core, BTS7960 Motor Subsystem)  
 **Classification:** Security Architecture & Defense Engineering  
 
 > **Credential hygiene:** configuration values in the example code are placeholders loaded from the environment. Never commit real broker passwords or gateway secrets. A credential that was ever committed or appeared in an unredacted [flash/NVS report](../attacks/esp32-firmware-extraction/README.md) must be rotated before this design is deployed.

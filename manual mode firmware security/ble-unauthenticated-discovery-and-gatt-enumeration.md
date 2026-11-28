@@ -4,7 +4,7 @@
 
 **Status:** procedure only. The test has not been executed and no result is claimed.
 
-**Scope:** the ENISOLAR rover and a Kali Linux test laptop in the team's lab. This first pass is deliberately read-only: it does not pair, write a command, brute-force a passkey, jam BLE, or attempt to connect to other devices. Disconnect motor power before testing so an accidental later test cannot move the rover.
+**Scope:** the RoverX and a Kali Linux test laptop in the team's lab. This first pass is deliberately read-only: it does not pair, write a command, brute-force a passkey, jam BLE, or attempt to connect to other devices. Disconnect motor power before testing so an accidental later test cannot move the rover.
 
 ## What this test establishes
 
@@ -19,7 +19,7 @@ Discovery or a successful GATT connection alone is not proof that command access
 
 ## Source baseline to compare after discovery
 
-The checked-in source names the rover `ENISOLAR-ROVER`. It declares the BLE service UUID as `8f4d0001-4f4b-4e49-9e4f-454e49534f01`, command characteristic as `8f4d0002-4f4b-4e49-9e4f-454e49534f01`, and status characteristic as `8f4d0003-4f4b-4e49-9e4f-454e49534f01`. These are comparison values only: **the discovery procedure below does not use them to find or enumerate the service**. See [`board_config.h`](https://github.com/0x53616d6568/rover-security/blob/da13547bd0ca5f64191ba233855ef71537cecae3/firmware/include/board_config.h) and [`ble_control.cpp`](https://github.com/0x53616d6568/rover-security/blob/da13547bd0ca5f64191ba233855ef71537cecae3/firmware/src/ble_control.cpp).
+The checked-in source names the rover `ROVERX`. It declares the BLE service UUID as `8f4d0001-4f4b-4e49-9e4f-454e49534f01`, command characteristic as `8f4d0002-4f4b-4e49-9e4f-454e49534f01`, and status characteristic as `8f4d0003-4f4b-4e49-9e4f-454e49534f01`. These are comparison values only: **the discovery procedure below does not use them to find or enumerate the service**. See [`board_config.h`](https://github.com/0x53616d6568/rover-security/blob/da13547bd0ca5f64191ba233855ef71537cecae3/firmware/include/board_config.h) and [`ble_control.cpp`](https://github.com/0x53616d6568/rover-security/blob/da13547bd0ca5f64191ba233855ef71537cecae3/firmware/src/ble_control.cpp).
 
 The same source sets the passkey to `123456` and treats an empty or all-zero authorized-central address as “allow any central” at the firmware authorization layer. Confirm the configuration and firmware actually flashed to the rover; a repository setting alone does not prove the deployed behavior. The firmware also configures BLE security, so an advertised service or a connection attempt must not be mistaken for a pairing bypass.
 
@@ -74,7 +74,7 @@ power on
 scan le
 ```
 
-If this BlueZ version does not accept `scan le`, use `scan on`. Wait up to 30 seconds for `ENISOLAR-ROVER`. Record its advertised name, address, and RSSI, then stop scanning:
+If this BlueZ version does not accept `scan le`, use `scan on`. Wait up to 30 seconds for `ROVERX`. Record its advertised name, address, and RSSI, then stop scanning:
 
 ```text
 scan off
@@ -111,7 +111,7 @@ Save the following as `ble_discover.py`. It finds the target by its advertised n
 import asyncio
 from bleak import BleakScanner, BleakClient
 
-TARGET_NAME = "ENISOLAR-ROVER"
+TARGET_NAME = "RoverX"
 
 async def main():
     found = await BleakScanner.discover(timeout=15, return_adv=True)

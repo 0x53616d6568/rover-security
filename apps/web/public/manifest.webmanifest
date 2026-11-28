@@ -1,5 +1,5 @@
 {
-  "name": "ENISOLAR Rover Console",
+  "name": "RoverX Console",
   "short_name": "Rover",
   "description": "Owner-bound rover operator console with split telemetry and command links.",
   "start_url": "/",

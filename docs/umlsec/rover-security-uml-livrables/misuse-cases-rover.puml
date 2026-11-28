@@ -16,7 +16,7 @@ skinparam usecase<<security>> {
   BackgroundColor #DCFCE7
   BorderColor #15803D
 }
-title Misuse cases — ENISOLAR Rover Security\nÉtat statique du dépôt, commit 4c808f6
+title Misuse cases — RoverX Security\nÉtat statique du dépôt, commit 4c808f6
 
 actor "Opérateur" as Operator
 actor "Central BLE\nà proximité" as BLEAttacker

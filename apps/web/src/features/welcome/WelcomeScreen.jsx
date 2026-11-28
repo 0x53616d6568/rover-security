@@ -89,7 +89,7 @@ export default function WelcomeScreen({ state, auth, onNavigate }) {
           <div className="relative">
             <div className="micro-label flex items-center gap-2">
               <span className="inline-block h-px w-5 bg-accent/70" />
-              ENISOLAR · Phase 1
+              ROVERX · Phase 1
             </div>
             <h2 className="mt-4 max-w-xl text-3xl font-semibold leading-[1.1] tracking-tight text-ink sm:text-4xl">
               Drive with a clear picture of the link, the state, and the stop.

@@ -1,6 +1,6 @@
 /*
   main.cpp — attaquant
-  Role: BLE central/scanner for the "cible" (ENISOLAR-ROVER).
+  Role: BLE central/scanner for the "cible" (ROVERX).
   Read-only test: scan -> connect (no pairing) -> enumerate GATT -> read
   characteristics that advertise the 'read' property. No writes, no pairing.
   Logs each of the four outcomes explicitly: ADVERTISED / CONNECTED / ENUMERATED / READABLE.
@@ -15,7 +15,7 @@
 #include <BLEAdvertisedDevice.h>
 #include <BLEClient.h>
 
-static const char* TARGET_NAME = "ENISOLAR-ROVER";
+static const char* TARGET_NAME = "ROVERX";
 static const uint32_t SCAN_SECONDS = 15;
 
 BLEAdvertisedDevice* foundDevice = nullptr;

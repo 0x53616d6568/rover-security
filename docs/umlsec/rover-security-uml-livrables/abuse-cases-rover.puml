@@ -20,7 +20,7 @@ skinparam usecase<<impact>> {
   BackgroundColor #EDE9FE
   BorderColor #6D28D9
 }
-title Abuse cases — chemins d’attaque contre ENISOLAR Rover\nAnalyse statique du dépôt, commit 4c808f6
+title Abuse cases — chemins d’attaque contre RoverX\nAnalyse statique du dépôt, commit 4c808f6
 
 actor "Attaquant BLE\nà proximité" as BLEAttacker
 actor "Lecteur du dépôt /\ndétenteur de credential" as CredentialAttacker

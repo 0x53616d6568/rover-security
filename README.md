@@ -1,4 +1,4 @@
-# ENISOLAR Rover — Phase 1 Plan (v1.2)
+# RoverX — Phase 1 Plan (v1.2)
 
 This repository is the planning baseline for a supervised, one-week rover demonstration. It is **not** a completed firmware, phone app, or dashboard implementation. The team must record only behavior that has been built and tested on the actual hardware.
 
@@ -65,7 +65,7 @@ Integrate daily on a known-good build. First motor tests are with the wheels lif
 
 ## Documents and deliverables
 
-- [Revised ENISOLAR requirements and risk analysis v1.2](docs/Cahier_des_charges_Rover_ENISOLAR_v1.2.pdf)
+- [Revised RoverX requirements and risk analysis v1.2](docs/Cahier_des_charges_RoverX_v1.2.pdf)
 - [Five-day project plan PDF](docs/project-plan.pdf)
 - [Editable Typst source for the project plan](docs/typst-source/main.typ)
 - [Rover blueprint and confirmed-vs-unconfirmed hardware](docs/Rover%20blueprint.md)

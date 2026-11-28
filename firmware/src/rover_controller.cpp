@@ -36,7 +36,7 @@ void RoverController::begin() {
 
   Serial.println();
   Serial.println("========================================");
-  Serial.println("   ENISOLAR ROVER — BOOT");
+  Serial.println("   RoverX — BOOT");
   Serial.printf("   Compiled: %s %s\n", __DATE__, __TIME__);
   Serial.println("========================================");
 

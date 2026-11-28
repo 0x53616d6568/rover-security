@@ -49,10 +49,10 @@ export default function LoginScreen({ onLogin, isLoading }) {
           <div>
             <div className="flex items-center gap-3">
               <span className="flex h-9 w-9 items-center justify-center rounded-sm border border-accent/40 bg-accent-soft font-mono text-[11px] font-semibold text-accent">
-                ES
+                RX
               </span>
               <div>
-                <div className="micro-label">ENISOLAR</div>
+                <div className="micro-label">ROVERX</div>
                 <div className="text-sm font-medium text-ink">Field operations</div>
               </div>
             </div>
@@ -91,10 +91,10 @@ export default function LoginScreen({ onLogin, isLoading }) {
           <div className="w-full max-w-sm">
             <div className="mb-8 flex items-center gap-3 lg:hidden">
               <span className="flex h-9 w-9 items-center justify-center rounded-sm border border-accent/40 bg-accent-soft font-mono text-[11px] font-semibold text-accent">
-                ES
+                RX
               </span>
               <div>
-                <div className="micro-label">ENISOLAR</div>
+                <div className="micro-label">ROVERX</div>
                 <div className="text-sm font-medium text-ink">Rover console</div>
               </div>
             </div>

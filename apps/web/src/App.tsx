@@ -182,10 +182,10 @@ export default function App() {
       <aside className="sticky top-0 hidden h-screen flex-col border-r border-line bg-bg-elevated/60 px-3 py-4 lg:flex">
         <div className="flex items-center gap-2.5 px-2">
           <span className="flex h-9 w-9 items-center justify-center rounded-sm border border-accent/40 bg-accent-soft font-mono text-[11px] font-semibold text-accent">
-            ES
+            RX
           </span>
           <div>
-            <div className="micro-label">ENISOLAR</div>
+            <div className="micro-label">ROVERX</div>
             <div className="text-sm font-medium text-ink">Rover console</div>
           </div>
         </div>
@@ -262,10 +262,10 @@ export default function App() {
           <div className="flex h-14 items-center gap-3 px-4 lg:px-8">
             <div className="flex items-center gap-2 lg:hidden">
               <span className="flex h-8 w-8 items-center justify-center rounded-sm border border-accent/40 bg-accent-soft font-mono text-[10px] font-semibold text-accent">
-                ES
+                RX
               </span>
               <div>
-                <div className="micro-label leading-none">ENISOLAR</div>
+                <div className="micro-label leading-none">ROVERX</div>
                 <div className="text-xs font-medium text-ink">{currentLabel}</div>
               </div>
             </div>

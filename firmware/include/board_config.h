@@ -6,7 +6,7 @@
 namespace board {
 
 // ---- BLE ----
-constexpr char BLE_DEVICE_NAME[] = "ENISOLAR-ROVER";
+constexpr char BLE_DEVICE_NAME[] = "ROVERX";
 constexpr char BLE_SERVICE_UUID[] = "8f4d0001-4f4b-4e49-9e4f-454e49534f01";
 constexpr char BLE_COMMAND_UUID[] = "8f4d0002-4f4b-4e49-9e4f-454e49534f01";
 constexpr char BLE_STATUS_UUID[] = "8f4d0003-4f4b-4e49-9e4f-454e49534f01";

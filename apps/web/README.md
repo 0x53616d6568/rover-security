@@ -1,4 +1,4 @@
-# ENISOLAR operator console (`apps/web`)
+# RoverX operator console (`apps/web`)
 
 Responsive browser console for the Phase 1 rover. Runs on a phone or a PC and
 uses two independent MQTT links: the telemetry broker is read-only and the
