@@ -2,6 +2,36 @@
 
 This repository is the planning baseline for a supervised, one-week rover demonstration. It is **not** a completed firmware, phone app, or dashboard implementation. The team must record only behavior that has been built and tested on the actual hardware.
 
+## Repository layout
+
+The browser console and management API are npm workspaces:
+
+```text
+apps/
+  web/   Operator console (React + Vite, installable PWA, 3D cockpit iframe)
+  api/   Owner/session/binding API (Express + PostgreSQL)
+firmware/       Main ESP32 firmware
+firmware2/      Auxiliary firmware
+attacks/        Security research workbench (unredacted evidence is gitignored)
+docs/           Requirements, architecture, and acceptance notes
+```
+
+From the repository root:
+
+```powershell
+npm install
+npm run dev            # console (https on localhost by default, port 5173)
+npm run dev:api        # API on 127.0.0.1:8080
+npm run build          # type-check + static build of apps/web
+npm run lint
+npm test               # web unit tests + API crypto tests
+```
+
+PostgreSQL is optional in development: the API still starts and reports degraded
+health while it retries migrations. The console then falls back to a
+browser-local owner store (`rover-users-fallback`). Never commit `.env.local`,
+database files, broker credentials, or encryption keys.
+
 ## Confirmed Phase 1 scope
 
 - A normal all-terrain rover, manually guided by an operator from a phone over **local BLE**.
@@ -44,8 +74,8 @@ Integrate daily on a known-good build. First motor tests are with the wheels lif
 - [Connectivity and loss-of-control behavior](docs/connectivity.md)
 - [MQTT split architecture and broker topics](docs/mqtt-architecture.md)
 - [Dashboard and telemetry contract](docs/dashboard.md)
-- [Phone app stack and BLE interface](phone-app/README.md)
-- [Backend user management and product access](backend/README.md)
+- [Operator console: stack, structure, and UI design](apps/web/README.md)
+- [Management API: structure, auth, and environment](apps/api/README.md)
 - [Navigation scope and future gate](docs/navigation.md)
 - [Security and test checklist](docs/security.md)
 - [Attack type registry](docs/attack-types.md)

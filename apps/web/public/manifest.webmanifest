@@ -1,0 +1,17 @@
+{
+  "name": "ENISOLAR Rover Console",
+  "short_name": "Rover",
+  "description": "Owner-bound rover operator console with split telemetry and command links.",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#070a09",
+  "theme_color": "#070a09",
+  "icons": [
+    {
+      "src": "/favicon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ]
+}

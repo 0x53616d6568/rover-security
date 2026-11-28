@@ -26,7 +26,13 @@ private-evidence/
 
 # Local backend state/security material
 backend/rover-users.db
+apps/api/rover-users.db
+apps/api/*.db
 *.db
+
+# Locally installed agent skills (downloaded to a temp directory, not committed)
+.agents/
+.claude/
 
 # ESP32 flash/NVS attack workbench artifacts are unredacted; never commit them
 attacks/esp32-firmware-extraction/workbench/evidence/

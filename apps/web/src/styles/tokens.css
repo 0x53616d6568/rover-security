@@ -1,0 +1,61 @@
+/* Design tokens: primitive values first, semantic aliases second. */
+:root {
+  color-scheme: dark;
+
+  --font-sans: "IBM Plex Sans", "Segoe UI Variable", "Segoe UI", system-ui, sans-serif;
+  --font-mono: "IBM Plex Mono", "Cascadia Mono", "Consolas", ui-monospace, monospace;
+
+  /* Surfaces — warm graphite, never pure black. */
+  --bg: #070a09;
+  --bg-elevated: #0a0f0d;
+  --surface: #0e1412;
+  --surface-2: #121a16;
+  --surface-3: #17211c;
+  --line: rgba(232, 237, 233, 0.08);
+  --line-strong: rgba(232, 237, 233, 0.16);
+  --line-focus: rgba(233, 180, 76, 0.55);
+
+  /* Ink */
+  --ink: #e8ede9;
+  --ink-muted: #94a39b;
+  --ink-faint: #65756d;
+
+  /* Solar amber is the product accent; green is reserved for live links. */
+  --accent: #e9b44c;
+  --accent-strong: #f5ca72;
+  --accent-ink: #1a1305;
+  --accent-soft: rgba(233, 180, 76, 0.12);
+  --accent-line: rgba(233, 180, 76, 0.34);
+
+  --live: #5fd3a0;
+  --live-soft: rgba(95, 211, 160, 0.12);
+  --live-line: rgba(95, 211, 160, 0.34);
+
+  --warn: #e9b44c;
+  --warn-soft: rgba(233, 180, 76, 0.12);
+  --danger: #e5685c;
+  --danger-soft: rgba(229, 104, 92, 0.12);
+  --danger-line: rgba(229, 104, 92, 0.4);
+  --info: #82b6d6;
+  --info-soft: rgba(130, 182, 214, 0.12);
+
+  --radius-xs: 4px;
+  --radius-sm: 6px;
+  --radius-md: 10px;
+  --radius-lg: 14px;
+  --radius-xl: 18px;
+  --radius-pill: 999px;
+
+  --shadow-panel:
+    inset 0 1px 0 rgba(255, 255, 255, 0.035),
+    0 18px 44px rgba(0, 0, 0, 0.32);
+  --shadow-pop:
+    inset 0 1px 0 rgba(255, 255, 255, 0.05),
+    0 24px 60px rgba(0, 0, 0, 0.45);
+  --shadow-focus: 0 0 0 2px var(--bg), 0 0 0 4px var(--accent);
+
+  --motion-fast: 140ms;
+  --motion-base: 200ms;
+  --motion-slow: 320ms;
+  --ease-out: cubic-bezier(0.16, 1, 0.3, 1);
+}

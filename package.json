@@ -1,0 +1,23 @@
+{
+  "name": "enisolar-rover-security",
+  "private": true,
+  "version": "0.1.0",
+  "description": "EniSolar rover security research: firmware, operator console, and management API.",
+  "workspaces": [
+    "apps/*"
+  ],
+  "engines": {
+    "node": ">=20"
+  },
+  "scripts": {
+    "dev": "npm run dev --workspace @rover/web",
+    "dev:api": "npm run dev --workspace @rover/api",
+    "build": "npm run build --workspace @rover/web",
+    "lint": "npm run lint --workspace @rover/web",
+    "test": "npm run test --workspace @rover/web && npm run test --workspace @rover/api",
+    "test:web": "npm run test --workspace @rover/web",
+    "test:api": "npm run test --workspace @rover/api",
+    "start:api": "npm run start --workspace @rover/api",
+    "check:api": "node --check apps/api/src/index.mjs"
+  }
+}

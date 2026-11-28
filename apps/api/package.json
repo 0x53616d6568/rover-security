@@ -1,0 +1,17 @@
+{
+  "name": "@rover/api",
+  "private": true,
+  "version": "0.1.0",
+  "type": "module",
+  "description": "Rover owner, binding, and session API (Express + PostgreSQL).",
+  "main": "src/index.mjs",
+  "scripts": {
+    "start": "node src/index.mjs",
+    "dev": "node --watch src/index.mjs",
+    "test": "node --test test/*.test.mjs"
+  },
+  "dependencies": {
+    "express": "^5.1.0",
+    "pg": "^8.16.3"
+  }
+}
