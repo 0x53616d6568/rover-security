@@ -6,6 +6,8 @@ const { Pool } = pg;
 
 export const pool = new Pool({
   connectionString: config.databaseUrl,
+  // Neon/managed PostgreSQL connections are TLS-only; verify certificates.
+  ssl: config.databaseSsl ? { rejectUnauthorized: true } : undefined,
   max: 5,
   connectionTimeoutMillis: 3000,
   idleTimeoutMillis: 30_000,

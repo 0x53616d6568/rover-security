@@ -76,6 +76,7 @@ Integrate daily on a known-good build. First motor tests are with the wheels lif
 - [Dashboard and telemetry contract](docs/dashboard.md)
 - [Operator console: stack, structure, and UI design](apps/web/README.md)
 - [Management API: structure, auth, and environment](apps/api/README.md)
+- [Hosting on Neon, Render, and Vercel](docs/deployment.md)
 - [Navigation scope and future gate](docs/navigation.md)
 - [Security and test checklist](docs/security.md)
 - [Attack type registry](docs/attack-types.md)

@@ -1,0 +1,25 @@
+services:
+  - type: web
+    name: roverx-api
+    runtime: node
+    region: oregon
+    plan: free
+    branch: main
+    buildCommand: npm ci --omit=dev
+    startCommand: npm run start:api
+    healthCheckPath: /api/health
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: ROVER_BACKEND_HOST
+        value: 0.0.0.0
+      - key: ROVER_COOKIE_SECURE
+        value: "1"
+      - key: ROVER_COOKIE_SAMESITE
+        value: lax
+      - key: DATABASE_URL
+        sync: false
+      - key: ROVER_BACKEND_ENCRYPTION_KEY
+        sync: false
+      - key: ROVER_CORS_ORIGIN
+        sync: false

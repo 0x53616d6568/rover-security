@@ -94,7 +94,9 @@ type ApiBody = {
 };
 
 async function request<T>(path: string, init?: RequestInit): Promise<T> {
-  const response = await fetch(`${apiBase()}${path}`, init);
+  // Same-origin by default in production (Vercel /api proxy). `include` also
+  // supports a directly configured cross-origin API with credentialed CORS.
+  const response = await fetch(`${apiBase()}${path}`, { credentials: "include", ...init });
   // fetch resolves on 4xx/5xx: inspect the status before treating the payload as data.
   if (!response.ok) {
     const errorBody = (await response.json().catch(() => null)) as ApiBody | null;

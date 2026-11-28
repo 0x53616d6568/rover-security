@@ -8,8 +8,11 @@ export function securityHeaders(req, res, next) {
   res.setHeader("Permissions-Policy", "camera=(), microphone=(), geolocation=()");
   res.setHeader("Cache-Control", "no-store");
 
-  if (config.corsOrigin) {
-    res.setHeader("Access-Control-Allow-Origin", config.corsOrigin);
+  // Only needed when the browser talks to the API directly. With the Vercel
+  // /api proxy the browser sees a same-origin request and no CORS is required.
+  const origin = req.headers.origin;
+  if (origin && config.corsOrigins.includes(origin)) {
+    res.setHeader("Access-Control-Allow-Origin", origin);
     res.setHeader("Access-Control-Allow-Credentials", "true");
     res.setHeader("Vary", "Origin");
     if (req.method === "OPTIONS") {

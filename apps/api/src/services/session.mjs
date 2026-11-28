@@ -4,11 +4,15 @@ import { parseCookies } from "../lib/http.mjs";
 
 const signer = createSessionSigner(config.encryptionKey, config.sessionTtlMs);
 
-export const cookieOptions = Object.freeze({
+const baseCookieOptions = Object.freeze({
   httpOnly: true,
-  sameSite: "lax",
+  sameSite: config.cookieSameSite,
   secure: config.cookieSecure,
   path: "/",
+});
+
+export const cookieOptions = Object.freeze({
+  ...baseCookieOptions,
   maxAge: config.sessionTtlMs,
 });
 
@@ -22,10 +26,5 @@ export function readSession(req) {
 }
 
 export function clearSessionCookie(res) {
-  res.clearCookie(config.cookieName, {
-    httpOnly: true,
-    sameSite: "lax",
-    secure: config.cookieSecure,
-    path: "/",
-  });
+  res.clearCookie(config.cookieName, baseCookieOptions);
 }
